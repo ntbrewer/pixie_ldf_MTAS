@@ -1,0 +1,7 @@
+This is an initialization of the 2015 version of pixie_ldf_slim. It is intended to be updated for the ANL experiments with MTAS in 2019. 
+
+updates to this scan code will include plots of various fiducial volumes and interpretation of DAQ_1 codewords for cycle identification. 
+
+It should eventually be superceded by utkscan.
+
+-Calcumore
