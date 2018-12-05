@@ -83,13 +83,13 @@ class VandleProcessor : public EventProcessor
     
     int counter;
     
-    static const double C_BAR_S =   6.32911;                   // speed of light in 60cm bar cm/ns
-    static const double C_BAR_B =   7.61499;                   // speed of light in 200cm bar cm/ns
-    static const double N_RAD_S =   32;                        // neutron radius for the center of small bar in cm
-    static const double N_RAD_B =   150;                       // neutron radius for the center of large bar in cm
-    static const double LENGTH_SMALL_CM = 60;                           // length of small vandle bar in cm
-    static const double LENGTH_BIG_CM   = 200;                          // length of large vandle bar in cm
-    static const double NUMBARS= 0;                            // number of VANDLE bars in the setup MK:change from1 to get rid of  2d Vandle spectra
+    static constexpr double C_BAR_S =   6.32911;                   // speed of light in 60cm bar cm/ns
+    static constexpr double C_BAR_B =   7.61499;                   // speed of light in 200cm bar cm/ns
+    static constexpr double N_RAD_S =   32;                        // neutron radius for the center of small bar in cm
+    static constexpr double N_RAD_B =   150;                       // neutron radius for the center of large bar in cm
+    static constexpr double LENGTH_SMALL_CM = 60;                           // length of small vandle bar in cm
+    static constexpr double LENGTH_BIG_CM   = 200;                          // length of large vandle bar in cm
+    static constexpr double NUMBARS= 0;                            // number of VANDLE bars in the setup MK:change from1 to get rid of  2d Vandle spectra
     static const double LENGTH_SMALL_NS;
     static const double LENGTH_BIG_NS;
     

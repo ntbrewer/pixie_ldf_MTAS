@@ -15,6 +15,7 @@
 #include <vector>
 
 #include <cstdlib>
+#include <unistd.h>
 
 #include "damm_plotids.h"
 #include "RandomPool.h"
