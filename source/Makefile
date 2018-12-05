@@ -63,10 +63,10 @@ CINCLUDEDIRS  = -Iinclude
 
 #------- basic linking instructions
 ifdef PULSEFIT
-LDLIBS   += -lm -lgsl -lgslcblas -lstdc++ -lg2c
+LDLIBS   += -lm -lgsl -lgslcblas -lstdc++ -lg2c 
 CXXFLAGS += -Dpulsefit
 else
-LDLIBS   += -lm -lstdc++ 
+LDLIBS   += -lm -lstdc++
 endif
 
 ifeq ($(FC),gfortran)
@@ -99,7 +99,7 @@ MTCPROCESSORO    = MtcProcessor.$(ObjSuf)
 DSSDPROCESSORO   = DssdProcessor.$(ObjSuf)
 SSDPROCESSORO    = SsdProcessor.$(ObjSuf)
 MTASPROCESSORO    = MtasProcessor.$(ObjSuf)
-#TRACESUBO        = TraceAnalyzer.$(ObjSuf)
+TRACESUBO        = TraceAnalyzer.$(ObjSuf)
 DETECTORDRIVERO  = DetectorDriver.$(ObjSuf)
 CORRELATORO      = Correlator.$(ObjSuf)
 RAWEVENTO        = RawEvent.$(ObjSuf)
@@ -130,7 +130,8 @@ OBJS   = $(READBUFFDATAO) $(SET2CCO) $(DSSDSUBO) $(DETECTORDRIVERO) \
 	$(GEPROCESSORO) $(SPLINEFITPROCESSORO) $(SPLINEPROCESSORO) \
 	$(DSSDPROCESSORO) $(SSDPROCESSORO) $(RAWEVENTO) $(RANDOMPOOLO) \
 	$(MTASPROCESSORO) $(STATSDATAO) \
-	$(WAVEFORMPROCESSORO) $(VANDLEPROCESSORO) $(PULSERPROCESSORO)
+	$(WAVEFORMPROCESSORO) $(VANDLEPROCESSORO) $(PULSERPROCESSORO) \
+	$(TRACESUBO)
 
 ifdef USEROOT
 OBJS  += $(ROOTPROCESSORO)
@@ -177,5 +178,10 @@ distdocs:
 
 #----------- link all created objects together
 #----------- to create pixie_ldf_c program
+ifeq ($(FC),gfortran)
+$(PIXIE): $(OBJS) $(LIBS)
+	$(LINK.o)  $^ -o $(DESTDIR)/$@_slim $(LDLIBS)
+else
 $(PIXIE): $(OBJS) $(LIBS)
 	$(LINK.o) $(LDLIBS) $^ -o $(DESTDIR)/$@_slim
+endif
