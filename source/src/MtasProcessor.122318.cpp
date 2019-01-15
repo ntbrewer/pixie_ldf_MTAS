@@ -38,7 +38,7 @@ void MtasProcessor::DeclarePlots(void) const
     
 	const int EnergyBins = SE; 
 
-	//MTAS spectras
+	//TAS spectras
 	for(int i=0; i<4; i++)
 	{    	
 		string titlePart;
@@ -78,7 +78,20 @@ void MtasProcessor::DeclarePlots(void) const
 	DeclareHistogram1D(MTAS_POSITION_ENERGY+200+25, EnergyBins, "Sum I");
 	DeclareHistogram1D(MTAS_POSITION_ENERGY+200+35, EnergyBins, "Sum M");
 	DeclareHistogram1D(MTAS_POSITION_ENERGY+200+45, EnergyBins, "Sum O");
-	
+	//Beta gated scalar. NTB 12/15/15
+//	DeclareHistogram1D(MTAS_POSITION_ENERGY+306, EnergyBins, "Scalar Rate (s) Beta Gated Total Central");
+	// K.C. Goetz: added for light pulser/other stability tests 7/30/13
+	//DeclareHistogram2D(MTAS_TOTALENERGY_EVO, EnergyBins, S9, "Total Energy Time Evolution");
+	//DeclareHistogram2D(MTAS_CENTRALENERGY_EVO, EnergyBins, S9, "Central Energy Time Evolution");
+	//DeclareHistogram2D(MTAS_INNERENERGY_EVO, EnergyBins, S9, "Inner Energy Time Evolution");
+	//DeclareHistogram2D(MTAS_MIDDLEENERGY_EVO, EnergyBins, S9, "Middle Energy Time Evolution");
+	//DeclareHistogram2D(MTAS_OUTERENERGY_EVO, EnergyBins, S9, "Outer Energy Time Evolution");
+
+	//for (int i=0; i<49; i++)
+	//  {
+	//    DeclareHistogram2D(MTAS_PMTENERGY_EVO+i, EnergyBins, S9, "Single PMT Energy");
+	//  }
+
 	// K. C. Goetz: added for MTAS March 2015 experiment
 	for (int i=0; i<5; i++)
 	  {
@@ -152,6 +165,21 @@ void MtasProcessor::DeclarePlots(void) const
 	DeclareHistogram1D(MTAS_POSITION_ENERGY+458, EnergyBins, "Si Gate 1");
 	DeclareHistogram1D(MTAS_POSITION_ENERGY+459, EnergyBins, "Si Gate 2");
 	DeclareHistogram1D(MTAS_POSITION_ENERGY+460, EnergyBins, "Si Gate 3");
+	DeclareHistogram1D(MTAS_POSITION_ENERGY+461, EnergyBins, "Si Gate 4");
+	DeclareHistogram1D(MTAS_POSITION_ENERGY+462, EnergyBins, "Si Gate 5");
+	DeclareHistogram1D(MTAS_POSITION_ENERGY+463, EnergyBins, "Si Gate 6");
+	DeclareHistogram1D(MTAS_POSITION_ENERGY+464, EnergyBins, "Si Gate 7");
+	DeclareHistogram1D(MTAS_POSITION_ENERGY+465, EnergyBins, "Si Gate 8");
+	DeclareHistogram1D(MTAS_POSITION_ENERGY+470, EnergyBins, "Si Gate 1");
+	DeclareHistogram1D(MTAS_POSITION_ENERGY+471, EnergyBins, "Si Gate 2");
+	DeclareHistogram1D(MTAS_POSITION_ENERGY+472, EnergyBins, "Si Gate 3");
+	DeclareHistogram1D(MTAS_POSITION_ENERGY+473, EnergyBins, "Si Gate 4");
+	DeclareHistogram1D(MTAS_POSITION_ENERGY+474, EnergyBins, "Si Gate 5");
+	DeclareHistogram1D(MTAS_POSITION_ENERGY+475, EnergyBins, "Si Gate 6");
+	DeclareHistogram1D(MTAS_POSITION_ENERGY+476, EnergyBins, "Si Gate 7");
+	DeclareHistogram1D(MTAS_POSITION_ENERGY+477, EnergyBins, "Si Gate 8");
+	DeclareHistogram1D(MTAS_POSITION_ENERGY+478, EnergyBins, "Si Gate 9");
+
 }
 
 bool MtasProcessor::Process(RawEvent &event)
@@ -167,55 +195,52 @@ bool MtasProcessor::Process(RawEvent &event)
 		siliSummary = event.GetSummary("sili");
 	if (logiSummary == NULL)
 		logiSummary = event.GetSummary("logi");
+	//DetectorSummary *ioncSummary = event.GetSummary("ionc");
 	if (refmodSummary == NULL)
 	  refmodSummary = event.GetSummary("refmod"); //added by Goetz
+	  
 
 	vector<ChanEvent*> mtasList= mtasSummary->GetList();
 	vector<ChanEvent*> siliList= siliSummary->GetList();
-	logiList= logiSummary->GetList();
+	vector<ChanEvent*> logiList= logiSummary->GetList();
+	//vector<ChanEvent*> ioncList= ioncSummary->GetList();
 	vector<ChanEvent*> refmodList = refmodSummary->GetList(); //added by Goetz
-
+	
+	
 	map<string, struct MtasData> mtasMap;
 	map<string, struct MtasData> siliMap;
-	map<string, struct MtasData> refmodMap;
-        //map<string, struct MtasData> logiMap;
+	map<string, struct MtasData> logiMap;
+	//map<string, struct MtasData> ioncMap;
+	map<string, struct MtasData> refmodMap; // added by Goetz
 
-        double maxLocation = 0; 
-	double nrOfCentralPMTs = 0; 
-        
-        //FillMapFromList(mtasList); 
+//sort data
+	double maxLocation =0; 
+	double nrOfCentralPMTs = 0;   
 	for(vector<ChanEvent*>::const_iterator mtasListIt = mtasList.begin(); mtasListIt != mtasList.end(); mtasListIt++)
 	{
 		string subtype = (*mtasListIt)->GetChanID().GetSubtype();
 		if(subtype[0] =='C')
 		    nrOfCentralPMTs ++;
-		/*if (mtasMap.count(subtype)>0)
+		if (mtasMap.count(subtype)>0)
 		{
 			cout<<"Error: Detector "<<subtype<<" has "<< mtasMap.count(subtype)+1<<" signals in one event"<<endl;
 			continue;//should I skip such events?
-		}*/
+		}
 			
 		if ((*mtasListIt)->GetEnergy() == 0 || (*mtasListIt)->GetEnergy() > 30000)
 				continue;
 				
-		//mtasMap.insert(make_pair(subtype,MtasData((*mtasListIt))));
+		mtasMap.insert(make_pair(subtype,MtasData((*mtasListIt))));
 		
 		if(maxLocation < (*mtasListIt)->GetChanID().GetLocation())
 			maxLocation = (*mtasListIt)->GetChanID().GetLocation();
 	}
-
-        //End Fill Mtas Map from List
-       	bool isBetaSignal = false;
-        double betaTime = -100.0;
-        double maxSiliconSignal = -1.0;
+	
+	bool isBetaSignal = false;
+    double betaTime = -100.0;
+    double maxSiliconSignal = -1.0;
 	extern DetectorDriver driver;
-
-        /*FillSiliMap();
-        FillRefModMap();
-	FillLogicMap();*/
-
-
-for(vector<ChanEvent*>::const_iterator siliListIt = siliList.begin(); siliListIt != siliList.end(); siliListIt++)
+	for(vector<ChanEvent*>::const_iterator siliListIt = siliList.begin(); siliListIt != siliList.end(); siliListIt++)
 	{
 		string subtype = (*siliListIt)->GetChanID().GetSubtype();
 		if (mtasMap.count(subtype)>0)
@@ -238,8 +263,8 @@ for(vector<ChanEvent*>::const_iterator siliListIt = siliList.begin(); siliListIt
                 betaTime = siliSummary->GetMaxEvent()->GetTime() * pixie::clockInSeconds;
             }
 	}
-        //End Fill SiliMap
 
+	// added by Goetz for March 2015 experiment allows for any detector type generic to be imported into mtas processor (subtype is independent)
 	for(vector<ChanEvent*>::const_iterator refmodListIt = refmodList.begin(); 
             refmodListIt != refmodList.end(); refmodListIt++)
 	  {
@@ -248,10 +273,8 @@ for(vector<ChanEvent*>::const_iterator siliListIt = siliList.begin(); siliListIt
             continue;
 	    refmodMap.insert(make_pair(subtype,MtasData((*refmodListIt))));
 	  }
-        //End Fill refMod Map
-
-	FillLogicMap();
-	/*bool isTriggerOnSignal = false;
+        
+	bool isTriggerOnSignal = false;
 	bool isTapeMoveOnSignal = false;
 	bool isTapeMoveOffSignal = false;
 	bool isMeasureOnSignal = false;
@@ -268,80 +291,99 @@ for(vector<ChanEvent*>::const_iterator siliListIt = siliList.begin(); siliListIt
 	for(vector<ChanEvent*>::const_iterator logiListIt = logiList.begin(); logiListIt != logiList.end(); logiListIt++)
 	{
 		string subtype = (*logiListIt)->GetChanID().GetSubtype();
-		if (logiMap.count(subtype)>2)
-			cout<<"Notice: Detector "<<subtype<<" has "<< logiMap.count(subtype)+1<<" signals in one event"<<endl;
+		if (logiMap.count(subtype)>0)
+			cout<<"Error: Detector "<<subtype<<" has "<< logiMap.count(subtype)+1<<" signals in one event"<<endl;
 		logiMap.insert(make_pair(subtype,MtasData(((*logiListIt)))));
 		
 		//set logic flags
 		if((*logiListIt)->GetEnergy() > logicTreshold)
 		{
-			if(subtype == "CW8") {
+			if(subtype == "TRU") {
+				isTriggerOnSignal = true;
+				measureOnTime = (*logiListIt)->GetTime() * pixie::clockInSeconds;
+				cycleNumber ++;
 				logicSignalsValue +=1;
 			}
-			if(subtype == "CW7")
+			
+			if(subtype == "IRU")
 			{
+				isIrradOnSignal = true;
 				logicSignalsValue +=2;
 			}
-			if(subtype == "CW6")
+			if(subtype == "IRD")
 			{
+				isIrradOffSignal = true;
 				logicSignalsValue +=4;
 			}	
-			if(subtype == "CW5")
+			if(subtype == "LPU")
 			{
+				isLightPulserOnSignal = true;
 				logicSignalsValue +=8;
 			}
-			if(subtype == "CW4")
+			if(subtype == "LPD")
 			{
+				isLightPulserOffSignal = true;
 				logicSignalsValue +=16;
 			}
-			if(subtype == "CW3")
+			if(subtype == "TMU")
 			{
+				isTapeMoveOnSignal = true;
 				logicSignalsValue +=32;
 			}
-			if(subtype == "CW2")
+			if(subtype == "TMD")
 			{
-			        logicSignalsValue +=64;
+				isTapeMoveOffSignal = true;
+				logicSignalsValue +=64;
 			}
-			if(subtype == "CW1")
+			
+			if(subtype == "BGU")
 			{
+				isBkgOnSignal = true;
 				logicSignalsValue +=128;
 			}
-			if(subtype == "CW0")
+			if(subtype == "BGD")
 			{
+				isBkgOffSignal = true;
 				logicSignalsValue +=256;
 			}
+			if(subtype == "MSU")
+			{
+				isMeasureOnSignal = true;
+				logicSignalsValue +=512;
+			}
+			if(subtype == "MSD")
+			{
+				isMeasureOffSignal = true;
+				logicSignalsValue +=1024;
+			}		
+
 		}
 		
 	}    
-	*/
-        //End fill Logic Map
-
 	double cycleTime = -1.0;
 	double actualTime = -1.0;
-        double earliestIMOTime = std::numeric_limits<double>::max();
+    double earliestIMOTime = std::numeric_limits<double>::max();
 	double actualLogiTime = -1.0;
 	double cycleLogiTime = -1.0;
 
-	if(mtasSummary->GetMult() > 0)//Set time only if at least one element in mtasList
+	if(mtasSummary->GetMult() > 0)//I have at leat one element in mtasList
 	{
-	    vector<ChanEvent*>::const_iterator mtasListIt = mtasList.begin();
-	    actualTime = (*mtasListIt)->GetTime() * pixie::clockInSeconds;
-	    if (firstTime == -1.) {
-		firstTime = actualTime;
-	    }
-	    cycleTime = actualTime - measureOnTime;
+		vector<ChanEvent*>::const_iterator mtasListIt = mtasList.begin();
+		actualTime = (*mtasListIt)->GetTime() * pixie::clockInSeconds;
+		if (firstTime == -1.) {
+		  firstTime = actualTime;
+		}
+		cycleTime = actualTime - measureOnTime;
+	}
+	if(logiSummary->GetMult() > 0)//I have at leat one element in mtasList
+	{
+		vector<ChanEvent*>::const_iterator logiListIt = logiList.begin();
+		actualLogiTime = (*logiListIt)->GetTime() * pixie::clockInSeconds;
+		cycleLogiTime = actualLogiTime - measureOnTime;
 	}
 
-	if(logiSummary->GetMult() > 0)//Set time only if at least one element in mtasList
-	{
-	    vector<ChanEvent*>::const_iterator logiListIt = logiList.begin();
-	    actualLogiTime = (*logiListIt)->GetTime() * pixie::clockInSeconds;
-	    cycleLogiTime = actualLogiTime - measureOnTime;
-	}
-
-        //SetCycleState();
-
-        //Check flags and set main (static) flags
+	   
+//Check flags and set main (static) flags
 
 	//tape		
 	if(isTapeMoveOffSignal && isTapeMoveOnSignal)
@@ -402,21 +444,15 @@ for(vector<ChanEvent*>::const_iterator siliListIt = siliList.begin(); siliListIt
 		isIrradOn = true;
 	if(isIrradOffSignal)
 		isIrradOn = false;
-
-        //End Set Cycle State
-
-        //Spectrum number convention
-        //0- all mtas, 1 - Central, 2 - Inner, 3 - Middle, 4 - Outer
-        vector <double> totalMtasEnergy (5,-1);
-        // 0-5 Central, 6-11 Inner, 12-17 Middle, 18-23 Outer
+ 
+//spectras 
+    //0- all mtas, 1 - Central, 2 - Inner, 3 - Middle, 4 - Outer
+	vector <double> totalMtasEnergy (5,-1);
+    // 0-5 Central, 6-11 Inner, 12-17 Middle, 18-23 Outer
 	vector <double> sumFrontBackEnergy(24,0);
 	int nrOfCentralPMT = 0;
 	double theSmallestCEnergy = 60000;
-	vector <double> refModule(1,-1);
 
-        /*FillMtasEnergyVectors();
-        FillRefModEnergyVector();
-        SetIfOnlyRingBool();*/
 
 	for(map<string, struct MtasData>::const_iterator mtasMapIt = mtasMap.begin();
             mtasMapIt != mtasMap.end(); mtasMapIt++)
@@ -482,8 +518,13 @@ for(vector<ChanEvent*>::const_iterator siliListIt = siliList.begin(); siliListIt
 		//singlePMTenergy.at(PMTindex) = signalEnergy;
 		
 	}
-        //Fill Mtas Energy Vectors
 
+
+	//Added by Goetz for March 2015 experiment
+	//this is set up to work with any generic type detector, simply add in correct subtype 
+	// reference module is ref subtype
+	
+	vector <double> refModule(1,-1);
 	for(map<string, struct MtasData>::const_iterator refmodMapIt = refmodMap.begin(); refmodMapIt != refmodMap.end(); refmodMapIt++)
 	  {
 	    double signalEnergy = (*refmodMapIt).second.energy;
@@ -496,19 +537,13 @@ for(vector<ChanEvent*>::const_iterator siliListIt = siliList.begin(); siliListIt
 	    
 	  }
 
-        //End Fill RefMod Energy vectors
-
-
-        //----------------------------------------------------//
-        //Processing done. Start checks and plotting.
-        if(nrOfCentralPMT != 12 || nrOfCentralPMT == 0)
-            totalMtasEnergy.at(1) =-1;
-        if(nrOfCentralPMT < 15) // ???NTB
-            plot(MTAS_POSITION_ENERGY+274, nrOfCentralPMT);
-
-        plot(MTAS_POSITION_ENERGY+275, totalMtasEnergy.at(1) / 10.0, nrOfCentralPMT);
-        plot(MTAS_POSITION_ENERGY+276, theSmallestCEnergy / 10.0, nrOfCentralPMT);
-
+    if(nrOfCentralPMT != 12 || nrOfCentralPMT == 0)
+        totalMtasEnergy.at(1) =-1;
+    if(nrOfCentralPMT < 15)
+        plot(MTAS_POSITION_ENERGY+274, nrOfCentralPMT);
+        
+    plot(MTAS_POSITION_ENERGY+275, totalMtasEnergy.at(1) / 10.0, nrOfCentralPMT);
+    plot(MTAS_POSITION_ENERGY+276, theSmallestCEnergy / 10.0, nrOfCentralPMT);
 	for(unsigned int i=0; i<sumFrontBackEnergy.size(); i++)
 	{
 		if(sumFrontBackEnergy.at(i) < 0)//it was only one signal in the hexagon module
@@ -746,330 +781,7 @@ for(vector<ChanEvent*>::const_iterator siliListIt = siliList.begin(); siliListIt
 	EndProcess(); // update the processing time
     
 	return true;
-
 }
-
-/*void MtasProcessor::FillMtasMap(const std::vector<ChanEvent*> &mtasList)
-{
-  
-	for(vector<ChanEvent*>::const_iterator mtasListIt = mtasList.begin(); mtasListIt != mtasList.end(); mtasListIt++)
-	{
-		string subtype = (*mtasListIt)->GetChanID().GetSubtype();
-		if(subtype[0] =='C')
-		    nrOfCentralPMTs ++;
-		if (mtasMap.count(subtype)>0)
-		{
-			cout<<"Error: Detector "<<subtype<<" has "<< mtasMap.count(subtype)+1<<" signals in one event"<<endl;
-			continue;//should I skip such events?
-		}
-			
-		if ((*mtasListIt)->GetEnergy() == 0 || (*mtasListIt)->GetEnergy() > 30000)
-				continue;
-				
-		//mtasMap.insert(make_pair(subtype,MtasData((*mtasListIt))));
-		
-		if(maxLocation < (*mtasListIt)->GetChanID().GetLocation())
-			maxLocation = (*mtasListIt)->GetChanID().GetLocation();
-	}
-}
-
-void MtasProcessor::FillSiliMap()
-{
-
-for(vector<ChanEvent*>::const_iterator siliListIt = siliList.begin(); siliListIt != siliList.end(); siliListIt++)
-	{
-		string subtype = (*siliListIt)->GetChanID().GetSubtype();
-		if (mtasMap.count(subtype)>0)
-			cout<<"Error: Detector "<<subtype<<" has "<< siliMap.count(subtype)+1<<" signals in one event"<<endl;
-		
-		Calibration cal = driver.cal.at((*siliListIt)->GetID());
-		if ((*siliListIt)->GetEnergy() < 200 || (*siliListIt)->GetEnergy() > 30000) {
-//		if ((*siliListIt)-> GetEnergy() < cal.GetMinThreshold() || (*siliListIt)->GetEnergy() > 30000) Oct '15 use hard coded threshold for online.
-			continue;
-        }		
-		siliMap.insert(make_pair(subtype,MtasData((*siliListIt))));
-	}
-	
-	if(siliMap.size()>0)
-	{
-            maxSiliconSignal = siliSummary->GetMaxEvent()->GetCalEnergy();//Jan 03 2011 Ola K
-            if(maxSiliconSignal > 2.0) 
-            {
-                isBetaSignal = true;
-                betaTime = siliSummary->GetMaxEvent()->GetTime() * pixie::clockInSeconds;
-            }
-	}
-}
-
-void MtasProcessor::FillRefModMap()
-{
-	for(vector<ChanEvent*>::const_iterator refmodListIt = refmodList.begin(); 
-            refmodListIt != refmodList.end(); refmodListIt++)
-	  {
-	    string subtype = (*refmodListIt)->GetChanID().GetSubtype();
-	    if ((*refmodListIt)->GetEnergy() == 0 || (*refmodListIt)->GetEnergy() > 30000)
-            continue;
-	    refmodMap.insert(make_pair(subtype,MtasData((*refmodListIt))));
-	  }
-}
-*/
-void MtasProcessor::FillLogicMap()
-{
-	isTriggerOnSignal = false;
-	isTapeMoveOnSignal = false;
-	isTapeMoveOffSignal = false;
-	isMeasureOnSignal = false;
-	isMeasureOffSignal = false;	
- 	isBkgOnSignal = false;
-	isBkgOffSignal = false;
- 	isLightPulserOnSignal = false;
-	isLightPulserOffSignal = false;	
- 	isIrradOnSignal = false;
-	isIrradOffSignal = false;
-
-	isTapeMoveOn = false;
-	isMeasureOn = true;
-	isBkgOn = false;
-	isLightPulserOn = false;
-	isIrradOn = false;
-	measureOnTime = -1; 
-	cycleNumber = 0;
-	
-	double logicTreshold = 1;	//logic threshold !!!!!!! (value?????)	
-	int logicSignalsValue = 0;
-	for(vector<ChanEvent*>::const_iterator logiListIt = logiList.begin(); logiListIt != logiList.end(); logiListIt++)
-	{
-		string subtype = (*logiListIt)->GetChanID().GetSubtype();
-		if (logiMap.count(subtype)>0)
-			cout<<"Error: Detector "<<subtype<<" has "<< logiMap.count(subtype)+1<<" signals in one event"<<endl;
-		logiMap.insert(make_pair(subtype,MtasData(((*logiListIt)))));
-		
-		//set logic flags
-		if((*logiListIt)->GetEnergy() > logicTreshold)
-		{
-			if(subtype == "TRU") {
-				isTriggerOnSignal = true;
-				measureOnTime = (*logiListIt)->GetTime() * pixie::clockInSeconds;
-				cycleNumber ++;
-				logicSignalsValue +=1;
-			}
-			
-			if(subtype == "IRU")
-			{
-				isIrradOnSignal = true;
-				logicSignalsValue +=2;
-			}
-			if(subtype == "IRD")
-			{
-				isIrradOffSignal = true;
-				logicSignalsValue +=4;
-			}	
-			if(subtype == "LPU")
-			{
-				isLightPulserOnSignal = true;
-				logicSignalsValue +=8;
-			}
-			if(subtype == "LPD")
-			{
-				isLightPulserOffSignal = true;
-				logicSignalsValue +=16;
-			}
-			if(subtype == "TMU")
-			{
-				isTapeMoveOnSignal = true;
-				logicSignalsValue +=32;
-			}
-			if(subtype == "TMD")
-			{
-				isTapeMoveOffSignal = true;
-				logicSignalsValue +=64;
-			}
-			
-			if(subtype == "BGU")
-			{
-				isBkgOnSignal = true;
-				logicSignalsValue +=128;
-			}
-			if(subtype == "BGD")
-			{
-				isBkgOffSignal = true;
-				logicSignalsValue +=256;
-			}
-			if(subtype == "MSU")
-			{
-				isMeasureOnSignal = true;
-				logicSignalsValue +=512;
-			}
-			if(subtype == "MSD")
-			{
-				isMeasureOffSignal = true;
-				logicSignalsValue +=1024;
-			}		
-
-		}
-		
-	}    
-
-}
-
-/*
-void MtasProcessor::SetCycleState()
-{
-//Check flags and set main (static) flags
-
-	//tape		
-	if(isTapeMoveOffSignal && isTapeMoveOnSignal)
-		cout<<"Error: tape movement signal and end of tape movement signal in the same event"<<endl;
-		
-	if(isTapeMoveOnSignal && isTapeMoveOn) 
-		cout<<"Error: No end of tape movement signal in the last tape cicle"<<endl;
-		
-	if(isTapeMoveOnSignal)
-		isTapeMoveOn = true;
-	if(isTapeMoveOffSignal)
-		isTapeMoveOn = false;
-
-	//measurement  
-	if(isMeasureOffSignal && isMeasureOnSignal)
-		cout<<"Error: measurement signal and no measurement signal in the same event"<<endl;
-		
-	if(isMeasureOnSignal && isMeasureOn) 
-		cout<<"Error: No end of measurement signal in the last tape cicle"<<endl;
-		
-	if(isMeasureOnSignal)
-		isMeasureOn = true;
-	if(isMeasureOffSignal)
-		isMeasureOn = false; 
-
-	//background		
-	if(isBkgOffSignal && isBkgOnSignal)
-		cout<<"Error: background signal and no background signal in the same event"<<endl;
-		
-	if(isBkgOnSignal && isBkgOn) 
-		cout<<"Error: No end of background signal in the last tape cicle"<<endl;
-		
-	if(isBkgOnSignal)
-		isBkgOn = true;
-	if(isBkgOffSignal)
-		isBkgOn = false; 
-		
-	//light pulser	
-	if(isLightPulserOffSignal && isLightPulserOnSignal)
-		cout<<"Error: light pulser signal and no light pulser signal in the same event"<<endl;
-		
-	if(isLightPulserOnSignal && isLightPulserOn) 
-		cout<<"Error: No end of light pulser signal in the last tape cicle"<<endl;
-		
-	if(isLightPulserOnSignal)
-		isLightPulserOn = true;
-	if(isLightPulserOffSignal)
-		isLightPulserOn = false;		
-		
-	//irradiation		
-	if(isIrradOffSignal && isIrradOnSignal)
-		cout<<"Error: irradiation signal and no irradiation signal in the same event"<<endl;
-		
-	if(isIrradOnSignal && isIrradOn) 
-		cout<<"Error: No end of irradiation signal in the last tape cicle"<<endl;
-		
-	if(isIrradOnSignal)
-		isIrradOn = true;
-	if(isIrradOffSignal)
-		isIrradOn = false;
-
-}
-
-
-void MtasProcessor::FillMtasEnergyVectors()
-{
-
-	for(map<string, struct MtasData>::const_iterator mtasMapIt = mtasMap.begin();
-            mtasMapIt != mtasMap.end(); mtasMapIt++)
-	{
-		double signalEnergy = (*mtasMapIt).second.energy;
-		double location = (*mtasMapIt).second.location;
-		double time = (*mtasMapIt).second.time * pixie::clockInSeconds;
-
-		if((*mtasMapIt).first[0] == 'C')
-		{
-		  totalMtasEnergy.at(1) += signalEnergy/12;
-		  totalMtasEnergy.at(0) += signalEnergy/12;	
-          nrOfCentralPMT ++;//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	   	if(theSmallestCEnergy > signalEnergy)
-			    theSmallestCEnergy = signalEnergy;
-		}
-		
-		else if((*mtasMapIt).first[0] == 'I')
-		{
-		  totalMtasEnergy.at(2) += signalEnergy/2.;
-		  totalMtasEnergy.at(0) += signalEnergy/2.;		
-          if (earliestIMOTime > 0 && time < earliestIMOTime)
-            earliestIMOTime = time;
-		}
-		
-		else if((*mtasMapIt).first[0] == 'M')
-		{
-		  totalMtasEnergy.at(3) += signalEnergy/2.;
-		  totalMtasEnergy.at(0) += signalEnergy/2.;		
-          if (earliestIMOTime > 0 && time < earliestIMOTime)
-            earliestIMOTime = time;
-		}
-		
-		else if((*mtasMapIt).first[0] == 'O')
-		{
-		  totalMtasEnergy.at(4) += signalEnergy/2.;
-		  totalMtasEnergy.at(0) += signalEnergy/2.;
-          if (earliestIMOTime > 0 && time < earliestIMOTime)
-            earliestIMOTime = time;
-		}
-
-					 
-		//F+B
-		int moduleIndex = (location -1)/2;
-		if(moduleIndex > 24)
-		{
-			cout<<"Warning: detector "<<(*mtasMapIt).first<<" location > 48"<<endl;
-			continue;
-		}
-		
-		if(sumFrontBackEnergy.at(moduleIndex) == 0)//it's the first signal from this hexagon module
-			sumFrontBackEnergy.at(moduleIndex) = -1* signalEnergy/2.;
-
-		else if(sumFrontBackEnergy.at(moduleIndex) < 0)//second signal from this hexagon module
-			sumFrontBackEnergy.at(moduleIndex) = -1*sumFrontBackEnergy.at(moduleIndex) + signalEnergy/2.;
-			
-		else //sumFrontBackEnergy.at(moduleIndex) > 0 - 3 or more signals in one event
-			cout<<"Warning: detector "<<(*mtasMapIt).first<<" has 3 or more signals"<<endl;
-
-
-		//Signal from a single PMT, added by K.C. Goetz on 9/1/13 for peak stability testing
-		//int PMTindex = location;
-		//singlePMTenergy.at(PMTindex) = signalEnergy;
-		
-	}
-}
-
-void MtasProcessor::FillRefModEnergyVector()
-{
-
-	vector <double> refModule(1,-1);
-	for(map<string, struct MtasData>::const_iterator refmodMapIt = refmodMap.begin(); refmodMapIt != refmodMap.end(); refmodMapIt++)
-	  {
-	    double signalEnergy = (*refmodMapIt).second.energy;
-	    // double location = (*refmodMapIt).second.location;
-
-	   if((*refmodMapIt).first == "ref")
-	      {
-		refModule.at(0) += signalEnergy;
-	      }
-	    
-	  }
-
-}
-void MtasProcessor::SetIfOnlyRingBool()
-{
-    return;
-}*/
 
 MtasProcessor::MtasData::MtasData(ChanEvent *chan)
 {
@@ -1079,3 +791,12 @@ MtasProcessor::MtasData::MtasData(ChanEvent *chan)
     time = chan->GetTime();
     location = chan->GetChanID().GetLocation();
 }
+
+bool MtasProcessor::isTapeMoveOn = false;
+bool MtasProcessor::isMeasureOn = true;
+bool MtasProcessor::isBkgOn = false;
+bool MtasProcessor::isLightPulserOn = false;
+bool MtasProcessor::isIrradOn = false;
+//bool MtasProcessor::isIrradOn = false;
+double MtasProcessor::measureOnTime = -1; 
+unsigned MtasProcessor::cycleNumber = 0;
