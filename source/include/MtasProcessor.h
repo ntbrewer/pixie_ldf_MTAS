@@ -8,7 +8,6 @@
 
 #include "EventProcessor.h"
 #include <vector>
-#include <map>
 
 class DetectorSummary;
 class RawEvent;
@@ -24,14 +23,16 @@ class MtasProcessor : public EventProcessor
         DetectorSummary *logiSummary;
         DetectorSummary *refmodSummary; //added by Goetz
 
-        bool isTapeMoveOn;
-        bool isMeasureOn;
-        bool isBkgOn;
-        bool isLightPulserOn;
-        bool isIrradOn;
-        unsigned cycleNumber;
+	
+
+        static bool isTapeMoveOn;
+        static bool isMeasureOn;
+        static bool isBkgOn;
+        static bool isLightPulserOn;
+        static bool isIrradOn;
+        static unsigned cycleNumber;
     
-        double measureOnTime;
+        static double measureOnTime;
         double firstTime;
 
 	bool isTriggerOnSignal;
@@ -45,18 +46,24 @@ class MtasProcessor : public EventProcessor
 	bool isLightPulserOffSignal;	
  	bool isIrradOnSignal;
 	bool isIrradOffSignal;
+        int logicSignalsValue;
 
-        static const double logicTreshold = 1;
-	int logicSignalsValue;
+    public:
+        MtasProcessor(); // no virtual c'tors
+        virtual void DeclarePlots(void) const;
+        virtual bool Process(RawEvent &event);
 
-        void FillLogicMap();
-        /*double maxLocation; 
-	double nrOfCentralPMTs; 
-
+    private:
         void FillMtasMap();
         void FillSiliMap();
         void FillRefModMap();
-        
+        void FillLogicMap();
+
+
+        double maxLocation; 
+	double nrOfCentralPMTs; 
+
+        /*
         void SetCycleState();
         void FillMtasEnergyVectors();
         void FillRefModEnergyVector();
@@ -64,7 +71,8 @@ class MtasProcessor : public EventProcessor
 
         struct MtasData //to trzeba przerobic // Needs rewritten?
         {
-            MtasData(ChanEvent *chan);
+            MtasData(std::string type="");
+	    MtasData(ChanEvent *chan);
             
             std::string detSubtype;
             double energy;
@@ -76,14 +84,18 @@ class MtasProcessor : public EventProcessor
         };
 
         std::vector<ChanEvent*> logiList;
+	std::vector<ChanEvent*> mtasList;
+	std::vector<ChanEvent*> siliList;
+	std::vector<ChanEvent*> refmodList;
+
+	std::map<std::string, struct MtasData>  mtasMap;
+	std::map<std::string, struct MtasData>  siliMap;
+	std::map<std::string, struct MtasData>  refmodMap;
         std::map<std::string, struct MtasData>  logiMap;
 
-    public:
-        MtasProcessor(); // no virtual c'tors
-        virtual void DeclarePlots(void) const;
-        virtual bool Process(RawEvent &event);
-
-
+        bool isBetaSignal;
+        double betaTime;
+    	double maxSiliconSignal;
 };
 
 #endif // __MTAS_PROCESSOR_H_
