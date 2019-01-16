@@ -214,7 +214,7 @@ bool MtasProcessor::Process(RawEvent &event)
 
 	FillMtasMap();
 	FillSiliMap();
- 	FillRefModMap();
+ 	FillRefModMapAndEnergy();
 	FillLogicMap(); //Maps are filled with data
 
 	//Set up time for mtas and cycle logic
@@ -241,75 +241,15 @@ bool MtasProcessor::Process(RawEvent &event)
 		cycleLogiTime = actualLogiTime - measureOnTime;
 	}
 
-	   
-//Check flags and set main (static) flags
+	SetCycleState();   //sets booleans to let us know where we are in the cycle
+	//options are isTapeMoveOn, isMeasureOn, isBkgOn, isLightPulserOn, isIrradOn, and cycleNumber
 
-	//tape		
-	if(isTapeMoveOffSignal && isTapeMoveOnSignal)
-		cout<<"Error: tape movement signal and end of tape movement signal in the same event"<<endl;
-		
-	if(isTapeMoveOnSignal && isTapeMoveOn) 
-		cout<<"Error: No end of tape movement signal in the last tape cicle"<<endl;
-		
-	if(isTapeMoveOnSignal)
-		isTapeMoveOn = true;
-	if(isTapeMoveOffSignal)
-		isTapeMoveOn = false;
-
-	//measurement  
-	if(isMeasureOffSignal && isMeasureOnSignal)
-		cout<<"Error: measurement signal and no measurement signal in the same event"<<endl;
-		
-	if(isMeasureOnSignal && isMeasureOn) 
-		cout<<"Error: No end of measurement signal in the last tape cicle"<<endl;
-		
-	if(isMeasureOnSignal)
-		isMeasureOn = true;
-	if(isMeasureOffSignal)
-		isMeasureOn = false; 
-
-	//background		
-	if(isBkgOffSignal && isBkgOnSignal)
-		cout<<"Error: background signal and no background signal in the same event"<<endl;
-		
-	if(isBkgOnSignal && isBkgOn) 
-		cout<<"Error: No end of background signal in the last tape cicle"<<endl;
-		
-	if(isBkgOnSignal)
-		isBkgOn = true;
-	if(isBkgOffSignal)
-		isBkgOn = false; 
-		
-	//light pulser	
-	if(isLightPulserOffSignal && isLightPulserOnSignal)
-		cout<<"Error: light pulser signal and no light pulser signal in the same event"<<endl;
-		
-	if(isLightPulserOnSignal && isLightPulserOn) 
-		cout<<"Error: No end of light pulser signal in the last tape cicle"<<endl;
-		
-	if(isLightPulserOnSignal)
-		isLightPulserOn = true;
-	if(isLightPulserOffSignal)
-		isLightPulserOn = false;		
-		
-	//irradiation		
-	if(isIrradOffSignal && isIrradOnSignal)
-		cout<<"Error: irradiation signal and no irradiation signal in the same event"<<endl;
-		
-	if(isIrradOnSignal && isIrradOn) 
-		cout<<"Error: No end of irradiation signal in the last tape cicle"<<endl;
-		
-	if(isIrradOnSignal)
-		isIrradOn = true;
-	if(isIrradOffSignal)
-		isIrradOn = false;
- 
         //Spectrum number convention
         //0- all mtas, 1 - Central, 2 - Inner, 3 - Middle, 4 - Outer
         vector <double> totalMtasEnergy (5,-1);
         // 0-5 Central, 6-11 Inner, 12-17 Middle, 18-23 Outer
 	vector <double> sumFrontBackEnergy(24,0);
-	int nrOfCentralPMT = 0;
+	//int nrOfCentralPMT = 0; //this is easily confused with nrOfCentralPMTs set in FillMtasMap;
 	double theSmallestCEnergy = 60000;
 
 
@@ -323,8 +263,9 @@ bool MtasProcessor::Process(RawEvent &event)
 		if((*mtasMapIt).first[0] == 'C')
 		{
 		  totalMtasEnergy.at(1) += signalEnergy/12;
-		  totalMtasEnergy.at(0) += signalEnergy/12;	
-          nrOfCentralPMT ++;//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		  totalMtasEnergy.at(0) += signalEnergy/12;
+		  isCenter = true;	
+         	 //nrOfCentralPMT ++;//redundant?
 	   	if(theSmallestCEnergy > signalEnergy)
 			    theSmallestCEnergy = signalEnergy;
 		}
@@ -333,6 +274,7 @@ bool MtasProcessor::Process(RawEvent &event)
 		{
 		  totalMtasEnergy.at(2) += signalEnergy/2.;
 		  totalMtasEnergy.at(0) += signalEnergy/2.;		
+		  isInner = true;
           if (earliestIMOTime > 0 && time < earliestIMOTime)
             earliestIMOTime = time;
 		}
@@ -341,6 +283,7 @@ bool MtasProcessor::Process(RawEvent &event)
 		{
 		  totalMtasEnergy.at(3) += signalEnergy/2.;
 		  totalMtasEnergy.at(0) += signalEnergy/2.;		
+		  isMiddle = true;
           if (earliestIMOTime > 0 && time < earliestIMOTime)
             earliestIMOTime = time;
 		}
@@ -349,6 +292,7 @@ bool MtasProcessor::Process(RawEvent &event)
 		{
 		  totalMtasEnergy.at(4) += signalEnergy/2.;
 		  totalMtasEnergy.at(0) += signalEnergy/2.;
+		  isOuter = true;
           if (earliestIMOTime > 0 && time < earliestIMOTime)
             earliestIMOTime = time;
 		}
@@ -370,20 +314,19 @@ bool MtasProcessor::Process(RawEvent &event)
 			
 		else //sumFrontBackEnergy.at(moduleIndex) > 0 - 3 or more signals in one event
 			cout<<"Warning: detector "<<(*mtasMapIt).first<<" has 3 or more signals"<<endl;
-
-
-		//Signal from a single PMT, added by K.C. Goetz on 9/1/13 for peak stability testing
-		//int PMTindex = location;
-		//singlePMTenergy.at(PMTindex) = signalEnergy;
 		
 	}
 
+	SetIfOnlyRingBool(); //Sets booleans for ring gating. Options are 
+			     //isCenter, isInner, isMiddle, isOuter, also 
+			     //isCenterOnly, isInnerOnly, isMiddleOnly, isOuterOnly, isAll
+			     //Usefull options should be no more than two of these.
 
 	//Added by Goetz for March 2015 experiment
 	//this is set up to work with any generic type detector, simply add in correct subtype 
 	// reference module is ref subtype
 	
-	vector <double> refModule(1,-1);
+	/*vector <double> refModule(1,-1);
 	for(map<string, struct MtasData>::const_iterator refmodMapIt = refmodMap.begin(); refmodMapIt != refmodMap.end(); refmodMapIt++)
 	  {
 	    double signalEnergy = (*refmodMapIt).second.energy;
@@ -394,15 +337,47 @@ bool MtasProcessor::Process(RawEvent &event)
 		refModule.at(0) += signalEnergy;
 	      }
 	    
-	  }
+	  }*/
+	//This is likely over kill. Maybe it doesn't matter. Energy set in first loop for MapFill.
 
-    if(nrOfCentralPMT != 12 || nrOfCentralPMT == 0)
+    if(isMeasureOn && !isLightPulserOn && !isTapeMoveOn)
+	{
+  	    //silicon spectras
+		plot(MTAS_POSITION_ENERGY+500, siliMap.size());
+		int siliconNumber;
+		//double siliconEnergy;
+		for(map<string, struct MtasData>::const_iterator siliMapIt = siliMap.begin(); siliMapIt != siliMap.end(); siliMapIt++)
+		{
+			siliconNumber = 0;
+       		if((*siliMapIt).first[2] == 'B')//bottom - channel from 9 to 15
+				siliconNumber = 8;
+			siliconNumber += (*siliMapIt).first[1]-48;//48 - position of '0' character in Ascii Table
+            plot(MTAS_POSITION_ENERGY+510, siliconNumber);
+		    plot(MTAS_POSITION_ENERGY+271, siliconNumber, cycleNumber);// Jan 03 2011
+            
+		}
+	}
+  
+	//logic signals
+	if (logicSignalsValue > 0)
+	{
+	    incplot(MTAS_POSITION_ENERGY+272, cycleLogiTime, cycleNumber, logicSignalsValue);
+	}
+
+	// K. C. Goetz for March 2015 Experiment: reference crystal vs time in 1 minute intervals
+	// Histogram # 5100
+	plot(MTAS_REFERENCE_EVO, refmodEnergy, (actualTime - firstTime)/60); //not using refModule.at(0) NTB
+
+
+    if(nrOfCentralPMTs != 12 ) //redundant?|| nrOfCentralPMTs == 0)
         totalMtasEnergy.at(1) =-1;
-    if(nrOfCentralPMT < 15)
-        plot(MTAS_POSITION_ENERGY+274, nrOfCentralPMT);
+
+//Plotting begins here. 
+    if(nrOfCentralPMTs < 15)
+        plot(MTAS_POSITION_ENERGY+274, nrOfCentralPMTs);
         
-    plot(MTAS_POSITION_ENERGY+275, totalMtasEnergy.at(1) / 10.0, nrOfCentralPMT);
-    plot(MTAS_POSITION_ENERGY+276, theSmallestCEnergy / 10.0, nrOfCentralPMT);
+    plot(MTAS_POSITION_ENERGY+275, totalMtasEnergy.at(1) / 10.0, nrOfCentralPMTs);
+    plot(MTAS_POSITION_ENERGY+276, theSmallestCEnergy / 10.0, nrOfCentralPMTs);
 	for(unsigned int i=0; i<sumFrontBackEnergy.size(); i++)
 	{
 		if(sumFrontBackEnergy.at(i) < 0)//it was only one signal in the hexagon module
@@ -608,34 +583,6 @@ bool MtasProcessor::Process(RawEvent &event)
 
 	   }
 	}  
-	
-    if(isMeasureOn && !isLightPulserOn && !isTapeMoveOn)
-	{
-  	    //silicon spectras
-		plot(MTAS_POSITION_ENERGY+500, siliMap.size());
-		int siliconNumber;
-		//double siliconEnergy;
-		for(map<string, struct MtasData>::const_iterator siliMapIt = siliMap.begin(); siliMapIt != siliMap.end(); siliMapIt++)
-		{
-			siliconNumber = 0;
-       		if((*siliMapIt).first[2] == 'B')//bottom - channel from 9 to 15
-				siliconNumber = 8;
-			siliconNumber += (*siliMapIt).first[1]-48;//48 - position of '0' character in Ascii Table
-            plot(MTAS_POSITION_ENERGY+510, siliconNumber);
-		    plot(MTAS_POSITION_ENERGY+271, siliconNumber, cycleNumber);// Jan 03 2011
-            
-		}
-	}
-  
-	//logic signals
-	if (logicSignalsValue > 0)
-	{
-	    incplot(MTAS_POSITION_ENERGY+272, cycleLogiTime, cycleNumber, logicSignalsValue);
-	}
-
-	// K. C. Goetz for March 2015 Experiment: reference crystal vs time in 1 minute intervals
-	// Histogram # 5100
-	plot(MTAS_REFERENCE_EVO, refModule.at(0), (actualTime - firstTime)/60); 
 
 	EndProcess(); // update the processing time
     
@@ -658,6 +605,82 @@ MtasProcessor::MtasData::MtasData(ChanEvent *chan)
     calEnergy = chan->GetCalEnergy();
     time = chan->GetTime();
     location = chan->GetChanID().GetLocation();
+}
+
+void MtasProcessor::SetIfOnlyRingBool()
+{
+    if(isCenter & isInner & isMiddle & isOuter) isAll = true;
+    if(isCenter & !isInner & !isMiddle & !isOuter) isCenterOnly = true;
+    if(!isCenter & isInner & !isMiddle & !isOuter) isInnerOnly = true;
+    if(!isCenter & !isInner & isMiddle & !isOuter) isMiddleOnly = true;
+    if(!isCenter & !isInner & !isMiddle & isOuter) isOuterOnly = true;
+}
+
+void MtasProcessor::SetCycleState()
+{
+
+//Check flags and set main (static) flags
+
+	//tape		
+	if(isTapeMoveOffSignal && isTapeMoveOnSignal)
+		cout<<"Error: tape movement signal and end of tape movement signal in the same event"<<endl;
+		
+	if(isTapeMoveOnSignal && isTapeMoveOn) 
+		cout<<"Error: No end of tape movement signal in the last tape cicle"<<endl;
+		
+	if(isTapeMoveOnSignal)
+		isTapeMoveOn = true;
+	if(isTapeMoveOffSignal)
+		isTapeMoveOn = false;
+
+	//measurement  
+	if(isMeasureOffSignal && isMeasureOnSignal)
+		cout<<"Error: measurement signal and no measurement signal in the same event"<<endl;
+		
+	if(isMeasureOnSignal && isMeasureOn) 
+		cout<<"Error: No end of measurement signal in the last tape cicle"<<endl;
+		
+	if(isMeasureOnSignal)
+		isMeasureOn = true;
+	if(isMeasureOffSignal)
+		isMeasureOn = false; 
+
+	//background		
+	if(isBkgOffSignal && isBkgOnSignal)
+		cout<<"Error: background signal and no background signal in the same event"<<endl;
+		
+	if(isBkgOnSignal && isBkgOn) 
+		cout<<"Error: No end of background signal in the last tape cicle"<<endl;
+		
+	if(isBkgOnSignal)
+		isBkgOn = true;
+	if(isBkgOffSignal)
+		isBkgOn = false; 
+		
+	//light pulser	
+	if(isLightPulserOffSignal && isLightPulserOnSignal)
+		cout<<"Error: light pulser signal and no light pulser signal in the same event"<<endl;
+		
+	if(isLightPulserOnSignal && isLightPulserOn) 
+		cout<<"Error: No end of light pulser signal in the last tape cicle"<<endl;
+		
+	if(isLightPulserOnSignal)
+		isLightPulserOn = true;
+	if(isLightPulserOffSignal)
+		isLightPulserOn = false;		
+		
+	//irradiation		
+	if(isIrradOffSignal && isIrradOnSignal)
+		cout<<"Error: irradiation signal and no irradiation signal in the same event"<<endl;
+		
+	if(isIrradOnSignal && isIrradOn) 
+		cout<<"Error: No end of irradiation signal in the last tape cicle"<<endl;
+		
+	if(isIrradOnSignal)
+		isIrradOn = true;
+	if(isIrradOffSignal)
+		isIrradOn = false;
+ 
 }
 
 void MtasProcessor::FillMtasMap()
@@ -685,6 +708,16 @@ void MtasProcessor::FillMtasMap()
 			maxLocation = (*mtasListIt)->GetChanID().GetLocation();
 	}
 
+	//init bools to false
+	isCenter = false;
+	isInner = false;
+	isMiddle = false;
+	isOuter = false;
+	isCenterOnly = false;
+	isInnerOnly = false;
+	isMiddleOnly = false;
+	isOuterOnly = false;
+	isAll = false;
 }
 
 void MtasProcessor::FillSiliMap()
@@ -719,16 +752,18 @@ void MtasProcessor::FillSiliMap()
 	}
 }
 
-void MtasProcessor::FillRefModMap()
+void MtasProcessor::FillRefModMapAndEnergy()
 {
 	// added by Goetz for March 2015 experiment allows for any detector type generic to be imported into mtas processor (subtype is independent)
+        refmodEnergy = 0.;
 	for(vector<ChanEvent*>::const_iterator refmodListIt = refmodList.begin(); 
             refmodListIt != refmodList.end(); refmodListIt++)
 	  {
 	    string subtype = (*refmodListIt)->GetChanID().GetSubtype();
 	    if ((*refmodListIt)->GetEnergy() == 0 || (*refmodListIt)->GetEnergy() > 30000)
-            continue;
+                continue;
 	    refmodMap.insert(make_pair(subtype,MtasData((*refmodListIt))));
+	    refmodEnergy += (*refmodListIt)->GetEnergy();
 	  }
 }
 

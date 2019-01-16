@@ -23,7 +23,7 @@ class MtasProcessor : public EventProcessor
         DetectorSummary *logiSummary;
         DetectorSummary *refmodSummary; //added by Goetz
 
-	
+	double refmodEnergy;
 
         static bool isTapeMoveOn;
         static bool isMeasureOn;
@@ -48,6 +48,17 @@ class MtasProcessor : public EventProcessor
 	bool isIrradOffSignal;
         int logicSignalsValue;
 
+	//booleans for rings
+	bool isCenter;
+	bool isInner;
+	bool isMiddle;
+	bool isOuter;
+	bool isCenterOnly;
+	bool isInnerOnly;
+	bool isMiddleOnly;
+	bool isOuterOnly;
+	bool isAll;
+
     public:
         MtasProcessor(); // no virtual c'tors
         virtual void DeclarePlots(void) const;
@@ -56,18 +67,16 @@ class MtasProcessor : public EventProcessor
     private:
         void FillMtasMap();
         void FillSiliMap();
-        void FillRefModMap();
+        void FillRefModMapAndEnergy();
         void FillLogicMap();
 
-
         double maxLocation; 
-	double nrOfCentralPMTs; 
+	int nrOfCentralPMTs; 
 
+	void SetCycleState();
         /*
-        void SetCycleState();
-        void FillMtasEnergyVectors();
-        void FillRefModEnergyVector();
-        void SetIfOnlyRingBool();*/
+        void FillMtasEnergyVectors();*/
+        void SetIfOnlyRingBool();
 
         struct MtasData //to trzeba przerobic // Needs rewritten?
         {
