@@ -129,11 +129,11 @@ bool Compare(const ChanEvent *a, const ChanEvent *b)
 //  this defines the maximum amount of data that will be received in a spill
 const unsigned int TOTALREAD = 1000000;
 
-#ifndef REVD
-const unsigned int maxWords = IO_BUFFER_LENGTH; // Revision A
-#else
+//#ifndef REVD
+//const unsigned int maxWords = IO_BUFFER_LENGTH; // Revision A
+//#else
 const unsigned int maxWords = EXTERNAL_FIFO_LENGTH; //Revision D
-#endif
+//#endif
 
 extern "C" void hissub_(unsigned short *sbuf[],unsigned short *nhw)
 {

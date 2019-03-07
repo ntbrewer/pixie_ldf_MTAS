@@ -1,0 +1,3 @@
+%mod	ch	damm	type		subtype	     loc  trace
+0       14       684     mtaspspmt	implant_xa       0   0
+0       15       684     mtaspspmt	implant_xb       1   0

@@ -5,7 +5,7 @@ SHELL=/bin/sh
 # uncomment the following line for root functionality
 #USEROOT = 1
 # uncomment this line if processing Rev. D data
-REVISIOND = 1
+#REVISIOND = 1
 #Uncomment this line to use the Pulse Fitting routine
 #PULSEFIT = 1
 
@@ -16,10 +16,12 @@ vpath %.h include/
 vpath %.cpp src/
 vpath %.cxx src/
 
-DIRA2=/usr/hhirf
+DIRA2=/usr/hribf/hhirf
+DIRB=/usr/hribf/hhirf
+#DIRA2=/usr/hhirf
 #DIRB= /usr/acq2/lib
 # DIRA2 = /usr/hhirf
-DIRB  = /usr/hhirf
+#DIRB  = /usr/hhirf
 #DESTDIR=/home/pixie16/MTAS/RUN01
 DESTDIR=..
 
@@ -108,7 +110,9 @@ RANDOMPOOLO      = RandomPool.$(ObjSuf)
 STATSDATAO       = StatsData.$(ObjSuf)
 WAVEFORMPROCESSORO = WaveformProcessor.$(ObjSuf)
 PULSERPROCESSORO   = PulserProcessor.$(ObjSuf)
-VANDLEPROCESSORO   = VandleProcessor.$(ObjSuf)
+PSPMTPROCESSORO   = PspmtProcessor.$(ObjSuf)
+MTASPSPMTPROCESSORO   = MtasPspmtProcessor.$(ObjSuf)
+#VANDLEPROCESSORO   = VandleProcessor.$(ObjSuf)
 
 ifdef USEROOT
 PIXIE            = pixie_ldf_c_root$(ExeSuf)
@@ -130,8 +134,9 @@ OBJS   = $(READBUFFDATAO) $(SET2CCO) $(DSSDSUBO) $(DETECTORDRIVERO) \
 	$(GEPROCESSORO) $(SPLINEFITPROCESSORO) $(SPLINEPROCESSORO) \
 	$(DSSDPROCESSORO) $(SSDPROCESSORO) $(RAWEVENTO) $(RANDOMPOOLO) \
 	$(MTASPROCESSORO) $(STATSDATAO) \
-	$(WAVEFORMPROCESSORO) $(VANDLEPROCESSORO) $(PULSERPROCESSORO) \
-	$(TRACESUBO)
+	$(WAVEFORMPROCESSORO)  $(PULSERPROCESSORO) \
+	$(TRACESUBO) $(PSPMTPROCESSORO) $(MTASPSPMTPROCESSORO)
+#$(VANDLEPROCESSORO) $(PULSERPROCESSORO) \
 
 ifdef USEROOT
 OBJS  += $(ROOTPROCESSORO)

@@ -52,6 +52,8 @@
 #include "MtcProcessor.h"
 #include "ScintProcessor.h"
 #include "WaveformProcessor.h"
+#include "PspmtProcessor.h"
+#include "MtasPspmtProcessor.h"
 //#include "VandleProcessor.h"
 //#include "PulserProcessor.h"
 
@@ -85,7 +87,7 @@ DetectorDriver::DetectorDriver()
 //  static int i;
 //   if(i++%100==1)
     vecProcess.push_back(new MtasProcessor());
-
+    vecProcess.push_back(new MtasPspmtProcessor());
 //    vecProcess.push_back(new DssdProcessor());
 //    vecProcess.push_back(new MtcProcessor());
 //    vecProcess.push_back(new PulserProcessor());
@@ -120,10 +122,10 @@ DetectorDriver::~DetectorDriver()
 */
 const set<string>& DetectorDriver::GetKnownDetectors()
 {   
-    const unsigned int detTypes = 18;
+    const unsigned int detTypes = 20;
     const string detectorStrings[detTypes] = {
 	"dssd_front", "dssd_back", "idssd_front", "position", "timeclass",
-	"ge", "si", "scint", "mcp","mtc", "mtas","ssd","generic", "vandle", "pulser", "sili", "logi","refmod"}; 
+	"ge", "si", "scint", "mcp","mtc", "mtas","ssd","generic", "vandle", "pulser", "sili", "logi","refmod","pspmt","mtaspspmt"}; 
     //Goetz added refmod detector type for reference module, for March 2015 experiment
   
     // only call this once
@@ -150,7 +152,6 @@ int DetectorDriver::Init(void)
 {
     // initialize the trace analysis routine
     traceSub.Init();
-
     // initialize processors in the event processing vector
     for (vector<EventProcessor *>::iterator it = vecProcess.begin();
 	 it != vecProcess.end(); it++) {
@@ -194,7 +195,7 @@ int DetectorDriver::ProcessEvent(const string &mode){
 	ThreshAndCal(chan); // check threshold and calibrate
 	PlotCal(chan);       
     } //end chan by chan event processing
- 
+
     // have each processor in the event processing vector handle the event
     for (vector<EventProcessor *>::iterator iProc = vecProcess.begin();
 	 iProc != vecProcess.end(); iProc++) {
@@ -463,10 +464,13 @@ void DetectorDriver::ReadCal()
     vector<Calibration>::const_iterator calIt = cal.begin();
     for (;mapIt != modChan.end(); mapIt++, calIt++) {
 	string type = mapIt->GetType();
+        //cout << " " << type << " and " << calIt->detType 
+	//	 << endl;
 	if (type != "ignore" && type != "" && calIt->detType!= type) {
 	    cout << "Uncalibrated detector found for type " << type
 		 << " at location " << mapIt->GetLocation() 
 		 << ". No default calibration is given, please correct." 
+		 << " " << type << " and " << calIt->detType 
 		 << endl;
 	    exit(EXIT_FAILURE);
 	}

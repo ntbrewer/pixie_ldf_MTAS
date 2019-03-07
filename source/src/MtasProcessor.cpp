@@ -39,7 +39,7 @@ void MtasProcessor::DeclarePlots(void) const
 	using namespace dammIds::mtas;
     
 	const int EnergyBins = SE; 
-
+        //cout << "ALL CLEAR" << endl;
 	//MTAS spectras
 	for(int i=0; i<4; i++)
 	{    	
@@ -197,14 +197,14 @@ bool MtasProcessor::Process(RawEvent &event)
 		siliSummary = event.GetSummary("sili");
 	if (logiSummary == NULL)
 		logiSummary = event.GetSummary("logi");
-	if (refmodSummary == NULL)
-	  refmodSummary = event.GetSummary("refmod"); //added by Goetz
+	//if (refmodSummary == NULL)
+	//  refmodSummary = event.GetSummary("refmod"); //added by Goetz
 	  
 
 	mtasList= mtasSummary->GetList();
 	siliList= siliSummary->GetList();
 	logiList= logiSummary->GetList();
-	refmodList = refmodSummary->GetList(); //added by Goetz
+	refmodList = event.GetSummary("refmod")->GetList(); //added by Goetz
 	
 	//Map structures (class MtasData) are init'd in the header and emptied here. 
 	mtasMap.clear();

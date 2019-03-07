@@ -1,0 +1,7 @@
+#config file expects
+# last four of Voltage Divider type, file reader looks for digits
+# followed by the implant scale, offset and thresh
+# followed by the diagnostic scale, offset and thresh
+0926
+1000    1000    0
+1000    1000    0

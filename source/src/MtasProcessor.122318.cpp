@@ -38,7 +38,7 @@ void MtasProcessor::DeclarePlots(void) const
     
 	const int EnergyBins = SE; 
 
-	//TAS spectras
+	//MTAS spectras
 	for(int i=0; i<4; i++)
 	{    	
 		string titlePart;
@@ -445,10 +445,10 @@ bool MtasProcessor::Process(RawEvent &event)
 	if(isIrradOffSignal)
 		isIrradOn = false;
  
-//spectras 
-    //0- all mtas, 1 - Central, 2 - Inner, 3 - Middle, 4 - Outer
-	vector <double> totalMtasEnergy (5,-1);
-    // 0-5 Central, 6-11 Inner, 12-17 Middle, 18-23 Outer
+        //Spectrum number convention
+        //0- all mtas, 1 - Central, 2 - Inner, 3 - Middle, 4 - Outer
+        vector <double> totalMtasEnergy (5,-1);
+        // 0-5 Central, 6-11 Inner, 12-17 Middle, 18-23 Outer
 	vector <double> sumFrontBackEnergy(24,0);
 	int nrOfCentralPMT = 0;
 	double theSmallestCEnergy = 60000;

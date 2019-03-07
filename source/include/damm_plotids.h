@@ -79,13 +79,13 @@ namespace dammIds {
     namespace scint {
 	namespace neutr {
 	    namespace betaGated {
-		const int D_ENERGY_DETX = 1900; // for 3 detectors (1-3)
+		const int D_ENERGY_DETX = 2605; // for 3 detectors (1-3)
 	    }
 	    namespace gammaGated {
-		const int D_ENERGY_DETX = 1903; // for 3 detectors (1-3)
+		const int D_ENERGY_DETX = 2608; // for 3 detectors (1-3)
 	    }
 	    namespace betaGammaGated {
-		const int D_ENERGY_DETX = 1906; // for 3 detectors (1-3)
+		const int D_ENERGY_DETX = 2611; // for 3 detectors (1-3)
 	    }
 	} // neutr namespace
     } // scint namespace
@@ -159,7 +159,10 @@ namespace dammIds {
 	const int SSD2_POSITION_ENERGY = 2702;
 	const int SSD3_POSITION_ENERGY = 2703;
     } // ssd namespace
-
+    namespace pspmt {
+        const int OFFSET = 1900; //!< Offset for PspmtProcessor
+        const int RANGE = 100; //!< Range for PspmtProcessor
+    }
     namespace mtas {
 	const int MTAS_POSITION_ENERGY = 3000;
 	const int MTAS_TOTAL_ENERGY = 3100;
@@ -173,7 +176,11 @@ namespace dammIds {
 	//const int MTAS_OUTERENERGY_EVO = 7904;
 	//const int MTAS_PMTENERGY_EVO = 7905;
     } // mtas namespace
-
+    /// in MtasPspmtProcessor.cpp
+    namespace mtaspspmt {
+    	const int OFFSET = 7600; //!< Offset for MtasPspmtProcessor
+    	const int RANGE = 100; //!< Range for MtasPspmtProcessor
+    }
 
     // in MtcProcessor.cpp
     namespace mtc {

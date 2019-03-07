@@ -18,7 +18,6 @@
 #include <vector>
 
 #include "TraceAnalyzer.h"
-
 #include "param.h"
 
 // forward declarations

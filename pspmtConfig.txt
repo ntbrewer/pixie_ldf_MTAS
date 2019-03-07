@@ -1,0 +1,9 @@
+#config file expects
+# last four of Voltage Divider type, file reader looks for digits
+# followed by the yso scale, offset and thresh
+# followed by the front scale, offset and thresh
+# followed by rotation
+0926
+1.0    0    1.0
+1.0    0    1.0
+0.0

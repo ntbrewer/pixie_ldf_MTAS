@@ -1,0 +1,6 @@
+%mod	ch	damm	type	subtype		loc	trace
+0       12      680     mtaspspmt	diagnostic_xb    0   0
+0       13      681     mtaspspmt	diagnostic_xa    1   0
+0       14      682     mtaspspmt	diagnostic_yb    2   0
+0       15      683     mtaspspmt	diagnostic_ya    3   0
+
