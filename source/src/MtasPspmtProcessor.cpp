@@ -114,7 +114,7 @@ bool MtasPspmtProcessor::Process(RawEvent &event) {
     //read in anode & dynode signals
     pspmtList = event.GetSummary("mtaspspmt")->GetList();
     //cout << " size: " << pspmtList.size() << endl; 
-
+    //cout << " energy: " << (*pspmtList.begin())->GetEnergy() << " " << (*pspmtList.begin())->GetChanID().GetLocation() << endl; 
     FillMtasPspmtMap();
 
     //set up position calculation for low / high gain yso signals and ion scint
@@ -136,7 +136,7 @@ bool MtasPspmtProcessor::Process(RawEvent &event) {
         if( dttype.substr(0,7) == "implant")
         {
 
-           double energy = (*pspmtIt).second.calEnergy;
+           double energy = (*pspmtIt).second.energy;
            double tag = (*pspmtIt).second.tag;
            dttype_ = implant;
 	   if (energy < implantThreshold_)
@@ -162,10 +162,10 @@ bool MtasPspmtProcessor::Process(RawEvent &event) {
         //cout << "sub " << dttype.substr(0,10) << endl;
         if( dttype.substr(0,10) == "diagnostic")
         {
-           double energy = (*pspmtIt).second.calEnergy;
+           double energy = (*pspmtIt).second.energy;
            double tag = (*pspmtIt).second.tag;
            dttype_ = diagnostic;
-           //cout << "Energy,tag " << energy << ", " << tag << endl;
+           
 	   if (energy < diagnosticThreshold_) {
                continue;
 	   }
@@ -189,6 +189,8 @@ bool MtasPspmtProcessor::Process(RawEvent &event) {
            //cout << "xa,b,ya,b" << xa << " , " << xb << " , " << ya 
 	   //	<< " , " << yb << endl;
            if (xa > 0 && xb > 0 && ya > 0 && yb > 0){
+	//	cout << "xa,b,ya,b" << xa << " , " << xb << " , " << ya 
+	//   	<< " , " << yb << endl;
               position_mtas.first = CalculatePosition(xa, xb, ya, yb, dttype_).first;
               position_mtas.second = CalculatePosition(xa, xb, ya, yb, dttype_).second;
               plot(DD_POS_DIAG, position_mtas.first * diagnosticScale_ + diagnosticOffset_,

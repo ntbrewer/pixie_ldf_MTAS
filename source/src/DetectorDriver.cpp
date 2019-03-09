@@ -193,7 +193,8 @@ int DetectorDriver::ProcessEvent(const string &mode){
 
         PlotRaw(chan);
 	ThreshAndCal(chan); // check threshold and calibrate
-	PlotCal(chan);       
+	PlotCal(chan);
+        //cout << chan->GetEnergy() << " from DD" <<  endl;       
     } //end chan by chan event processing
 
     // have each processor in the event processing vector handle the event
@@ -257,7 +258,7 @@ int DetectorDriver::ThreshAndCal(ChanEvent *chan)
 
         traceSub.Analyze(chan->GetTraceRef(), type, subtype);
 	energy = traceSub.GetEnergy();
-        chan->SetEnergy(energy);
+        //chan->SetEnergy(energy);
     } else {
       // otherwise, use the Pixie on-board calculated energy
       // add a random number to convert an integer value to a 
