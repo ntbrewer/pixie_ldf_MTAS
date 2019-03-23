@@ -349,7 +349,7 @@ bool MtasProcessor::Process(RawEvent &event)
 		for(map<string, struct MtasData>::const_iterator siliMapIt = siliMap.begin(); siliMapIt != siliMap.end(); siliMapIt++)
 		{
 			siliconNumber = 0;
-       		if((*siliMapIt).first[2] == 'B')//bottom - channel from 9 to 15
+       		if((*siliMapIt).first[2] == 'T')//top - channel from 9 to 15
 				siliconNumber = 8;
 			siliconNumber += (*siliMapIt).first[1]-48;//48 - position of '0' character in Ascii Table
             plot(MTAS_POSITION_ENERGY+510, siliconNumber);
