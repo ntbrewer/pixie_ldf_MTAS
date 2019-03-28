@@ -20,7 +20,9 @@ namespace dammIds {
 	const int D_POSY   = 922;
 	const int DD_POSXY = 923;
     }
-
+    namespace state {	
+	const int DD_STATE_TIME   = 6000;
+    }
     // in GeProcessor.cpp
     namespace ge {
 	const int D_ENERGY = 1500;

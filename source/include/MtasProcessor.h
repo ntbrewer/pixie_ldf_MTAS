@@ -20,33 +20,14 @@ class MtasProcessor : public EventProcessor
     private:
         DetectorSummary *mtasSummary; ///< all detectors of type Mtas
         DetectorSummary *siliSummary; 
-        DetectorSummary *logiSummary;
         DetectorSummary *refmodSummary; //added by Goetz
 
 	double refmodEnergy;
 
-        static bool isTapeMoveOn;
-        static bool isMeasureOn;
-        static bool isBkgOn;
-        static bool isLightPulserOn;
-        static bool isIrradOn;
-        static unsigned cycleNumber;
     
         static double measureOnTime;
         double firstTime;
 
-	bool isTriggerOnSignal;
-	bool isTapeMoveOnSignal;
-	bool isTapeMoveOffSignal;
-	bool isMeasureOnSignal;
-	bool isMeasureOffSignal;	
- 	bool isBkgOnSignal;
-	bool isBkgOffSignal;
- 	bool isLightPulserOnSignal;
-	bool isLightPulserOffSignal;	
- 	bool isIrradOnSignal;
-	bool isIrradOffSignal;
-        int logicSignalsValue;
 
 	//booleans for rings
 	bool isCenter;
@@ -68,12 +49,12 @@ class MtasProcessor : public EventProcessor
         void FillMtasMap();
         void FillSiliMap();
         void FillRefModMapAndEnergy();
-        void FillLogicMap();
+
 
         double maxLocation; 
-	int nrOfCentralPMTs; 
+	int nrOfCentralPMTs;
+ 
 
-	void SetCycleState();
         /*
         void FillMtasEnergyVectors();*/
         void SetIfOnlyRingBool();
@@ -92,7 +73,7 @@ class MtasProcessor : public EventProcessor
             //std::vector<int> trace; not necessary for MTAS
         };
 
-        std::vector<ChanEvent*> logiList;
+
 	std::vector<ChanEvent*> mtasList;
 	std::vector<ChanEvent*> siliList;
 	std::vector<ChanEvent*> refmodList;
@@ -100,7 +81,7 @@ class MtasProcessor : public EventProcessor
 	std::map<std::string, struct MtasData>  mtasMap;
 	std::map<std::string, struct MtasData>  siliMap;
 	std::map<std::string, struct MtasData>  refmodMap;
-        std::map<std::string, struct MtasData>  logiMap;
+
 
         bool isBetaSignal;
         double betaTime;

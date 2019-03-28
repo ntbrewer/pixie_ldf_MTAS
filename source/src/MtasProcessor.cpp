@@ -19,16 +19,16 @@ using std::endl;
 using std::vector;
 using std::string;
 
-static double measureOnTime =-1.;
+//static double measureOnTime =-1.;
 static double firstTime =0.;
 MtasProcessor::MtasProcessor() :
-  EventProcessor(), mtasSummary(NULL), siliSummary(NULL), logiSummary(NULL), refmodSummary(NULL) //Goetz added refmodSummary subtype
+  EventProcessor(), mtasSummary(NULL), siliSummary(NULL), refmodSummary(NULL) //Goetz added refmodSummary subtype logiSummary(NULL),
 {
   firstTime = -1.;
     name = "mtas";
     associatedTypes.insert("mtas");
     associatedTypes.insert("sili");//silicons
-    associatedTypes.insert("logi");//logic sygnals
+    //associatedTypes.insert("logi");//logic sygnals
     //associatedTypes.insert("ionc");//ionization chamber
     // Goetz: added reference module type generic for March 2015 experiment 
     associatedTypes.insert("refmod"); 
@@ -195,34 +195,35 @@ bool MtasProcessor::Process(RawEvent &event)
 		mtasSummary = event.GetSummary("mtas");//czy musze to robic tak?
 	if (siliSummary == NULL)	
 		siliSummary = event.GetSummary("sili");
-	if (logiSummary == NULL)
-		logiSummary = event.GetSummary("logi");
+	//if (logiSummary == NULL)
+	//	logiSummary = event.GetSummary("logi");
 	//if (refmodSummary == NULL)
 	//  refmodSummary = event.GetSummary("refmod"); //added by Goetz
 	  
 
 	mtasList= mtasSummary->GetList();
 	siliList= siliSummary->GetList();
-	logiList= logiSummary->GetList();
+	//logiList= logiSummary->GetList();
 	refmodList = event.GetSummary("refmod")->GetList(); //added by Goetz
 	
 	//Map structures (class MtasData) are init'd in the header and emptied here. 
 	mtasMap.clear();
 	siliMap.clear();
-	logiMap.clear();
+	//logiMap.clear();
 	refmodMap.clear(); 
 
 	FillMtasMap();
 	FillSiliMap();
  	FillRefModMapAndEnergy();
-	FillLogicMap(); //Maps are filled with data
+
+	//FillLogicMap(); //Maps are filled with data
 
 	//Set up time for mtas and cycle logic
 	double cycleTime = -1.0;
 	double actualTime = -1.0;
         double earliestIMOTime = std::numeric_limits<double>::max();
 	double actualLogiTime = -1.0;
-	double cycleLogiTime = -1.0;
+	//double cycleLogiTime = -1.0;
 
 	if(mtasSummary->GetMult() > 0)//I have at leat one element in mtasList
 	{
@@ -234,7 +235,7 @@ bool MtasProcessor::Process(RawEvent &event)
 		cycleTime = actualTime - measureOnTime;
 	}
 
-	if(logiSummary->GetMult() > 0)//I have at leat one element in mtasList
+	/*if(logiSummary->GetMult() > 0)//I have at leat one element in mtasList
 	{
 		vector<ChanEvent*>::const_iterator logiListIt = logiList.begin();
 		actualLogiTime = (*logiListIt)->GetTime() * pixie::clockInSeconds;
@@ -243,7 +244,7 @@ bool MtasProcessor::Process(RawEvent &event)
 
 	SetCycleState();   //sets booleans to let us know where we are in the cycle
 	//options are isTapeMoveOn, isMeasureOn, isBkgOn, isLightPulserOn, isIrradOn, and cycleNumber
-
+*/
         //Spectrum number convention
         //0- all mtas, 1 - Central, 2 - Inner, 3 - Middle, 4 - Outer
         vector <double> totalMtasEnergy (5,-1);
@@ -339,7 +340,7 @@ bool MtasProcessor::Process(RawEvent &event)
 	    
 	  }*/
 	//This is likely over kill. Maybe it doesn't matter. Energy set in first loop for MapFill.
-
+/*
     if(isMeasureOn && !isLightPulserOn && !isTapeMoveOn)
 	{
   	    //silicon spectras
@@ -583,7 +584,7 @@ bool MtasProcessor::Process(RawEvent &event)
 
 	   }
 	}  
-
+*/
 	EndProcess(); // update the processing time
     
 	return true;
@@ -615,74 +616,6 @@ void MtasProcessor::SetIfOnlyRingBool()
     if(!isCenter & !isInner & isMiddle & !isOuter) isMiddleOnly = true;
     if(!isCenter & !isInner & !isMiddle & isOuter) isOuterOnly = true;
 }
-
-void MtasProcessor::SetCycleState()
-{
-
-//Check flags and set main (static) flags
-
-	//tape		
-	if(isTapeMoveOffSignal && isTapeMoveOnSignal)
-		cout<<"Error: tape movement signal and end of tape movement signal in the same event"<<endl;
-		
-	if(isTapeMoveOnSignal && isTapeMoveOn) 
-		cout<<"Error: No end of tape movement signal in the last tape cicle"<<endl;
-		
-	if(isTapeMoveOnSignal)
-		isTapeMoveOn = true;
-	if(isTapeMoveOffSignal)
-		isTapeMoveOn = false;
-
-	//measurement  
-	if(isMeasureOffSignal && isMeasureOnSignal)
-		cout<<"Error: measurement signal and no measurement signal in the same event"<<endl;
-		
-	if(isMeasureOnSignal && isMeasureOn) 
-		cout<<"Error: No end of measurement signal in the last tape cicle"<<endl;
-		
-	if(isMeasureOnSignal)
-		isMeasureOn = true;
-	if(isMeasureOffSignal)
-		isMeasureOn = false; 
-
-	//background		
-	if(isBkgOffSignal && isBkgOnSignal)
-		cout<<"Error: background signal and no background signal in the same event"<<endl;
-		
-	if(isBkgOnSignal && isBkgOn) 
-		cout<<"Error: No end of background signal in the last tape cicle"<<endl;
-		
-	if(isBkgOnSignal)
-		isBkgOn = true;
-	if(isBkgOffSignal)
-		isBkgOn = false; 
-		
-	//light pulser	
-	if(isLightPulserOffSignal && isLightPulserOnSignal)
-		cout<<"Error: light pulser signal and no light pulser signal in the same event"<<endl;
-		
-	if(isLightPulserOnSignal && isLightPulserOn) 
-		cout<<"Error: No end of light pulser signal in the last tape cicle"<<endl;
-		
-	if(isLightPulserOnSignal)
-		isLightPulserOn = true;
-	if(isLightPulserOffSignal)
-		isLightPulserOn = false;		
-		
-	//irradiation		
-	if(isIrradOffSignal && isIrradOnSignal)
-		cout<<"Error: irradiation signal and no irradiation signal in the same event"<<endl;
-		
-	if(isIrradOnSignal && isIrradOn) 
-		cout<<"Error: No end of irradiation signal in the last tape cicle"<<endl;
-		
-	if(isIrradOnSignal)
-		isIrradOn = true;
-	if(isIrradOffSignal)
-		isIrradOn = false;
- 
-}
-
 void MtasProcessor::FillMtasMap()
 {
 
@@ -767,101 +700,3 @@ void MtasProcessor::FillRefModMapAndEnergy()
 	  }
 }
 
-void MtasProcessor::FillLogicMap()
-{
-        isTriggerOnSignal = false;
-	isTapeMoveOnSignal = false;
-	isTapeMoveOffSignal = false;
-	isMeasureOnSignal = false;
-	isMeasureOffSignal = false;	
- 	isBkgOnSignal = false;
-	isBkgOffSignal = false;
- 	isLightPulserOnSignal = false;
-	isLightPulserOffSignal = false;	
- 	isIrradOnSignal = false;
-	isIrradOffSignal = false;
-	
-	double logicTreshold = 1;	//logic threshold !!!!!!! (value?????)	
-	logicSignalsValue = 0;
-
-	for(vector<ChanEvent*>::const_iterator logiListIt = logiList.begin(); logiListIt != logiList.end(); logiListIt++)
-	{
-		string subtype = (*logiListIt)->GetChanID().GetSubtype();
-		if (logiMap.count(subtype)>0)
-			cout<<"Error: Detector "<<subtype<<" has "<< logiMap.count(subtype)+1<<" signals in one event"<<endl;
-		logiMap.insert(make_pair(subtype,MtasData(((*logiListIt)))));
-		
-		//set logic flags
-		if((*logiListIt)->GetEnergy() > logicTreshold)
-		{
-			if(subtype == "TRU") {
-				isTriggerOnSignal = true;
-				measureOnTime = (*logiListIt)->GetTime() * pixie::clockInSeconds;
-				cycleNumber ++;
-				logicSignalsValue +=1;
-			}
-			
-			if(subtype == "IRU")
-			{
-				isIrradOnSignal = true;
-				logicSignalsValue +=2;
-			}
-			if(subtype == "IRD")
-			{
-				isIrradOffSignal = true;
-				logicSignalsValue +=4;
-			}	
-			if(subtype == "LPU")
-			{
-				isLightPulserOnSignal = true;
-				logicSignalsValue +=8;
-			}
-			if(subtype == "LPD")
-			{
-				isLightPulserOffSignal = true;
-				logicSignalsValue +=16;
-			}
-			if(subtype == "TMU")
-			{
-				isTapeMoveOnSignal = true;
-				logicSignalsValue +=32;
-			}
-			if(subtype == "TMD")
-			{
-				isTapeMoveOffSignal = true;
-				logicSignalsValue +=64;
-			}
-			
-			if(subtype == "BGU")
-			{
-				isBkgOnSignal = true;
-				logicSignalsValue +=128;
-			}
-			if(subtype == "BGD")
-			{
-				isBkgOffSignal = true;
-				logicSignalsValue +=256;
-			}
-			if(subtype == "MSU")
-			{
-				isMeasureOnSignal = true;
-				logicSignalsValue +=512;
-			}
-			if(subtype == "MSD")
-			{
-				isMeasureOffSignal = true;
-				logicSignalsValue +=1024;
-			}		
-
-		}
-		
-	}    
-}
-bool MtasProcessor::isTapeMoveOn = false;
-bool MtasProcessor::isMeasureOn = true;
-bool MtasProcessor::isBkgOn = false;
-bool MtasProcessor::isLightPulserOn = false;
-bool MtasProcessor::isIrradOn = false;
-//bool MtasProcessor::isIrradOn = false;
-double MtasProcessor::measureOnTime = -1; 
-unsigned MtasProcessor::cycleNumber = 0;
