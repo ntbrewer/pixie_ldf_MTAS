@@ -30,6 +30,7 @@ bool StateAnalyzer::isLightPulserOn;
 bool StateAnalyzer::isIrradOn;
 double StateAnalyzer::previousCycleTime;
 double StateAnalyzer::measureOnTime;
+double StateAnalyzer::firstTime;
 unsigned StateAnalyzer::cycleNumber;
 
 /**
@@ -39,6 +40,13 @@ unsigned StateAnalyzer::cycleNumber;
 void StateAnalyzer::DeclarePlots() const
 {
 	using namespace dammIds::state;
+
+	const int TimeBins = SE;
+	const int StateBins = S4; 
+
+	DeclareHistogram2D(DD_STATE_TIME, TimeBins,StateBins, "State Flags vs Time");
+	DeclareHistogram2D(DD_STATE_TIME+1, TimeBins,StateBins, "ON Signal Flags vs Time");
+	DeclareHistogram2D(DD_STATE_TIME+2, TimeBins,StateBins, "OFF Signal Flags vs Time");
 }
 
 StateAnalyzer::StateAnalyzer():logiSummary(NULL)
@@ -60,7 +68,7 @@ StateAnalyzer::~StateAnalyzer()
  * i.e. figure out a good way to see all state changes vs time
  * set state and time of change.
  */
-bool StateAnalyzer::Init(void)
+bool StateAnalyzer::Init()
 {
 
     isTapeMoveOn = false;
@@ -69,7 +77,9 @@ bool StateAnalyzer::Init(void)
     isLightPulserOn = false;
     isIrradOn = false;
     measureOnTime = -1; 
+    firstTime = -1;
     cycleNumber = 0;
+    cout << "Cycle state init done." << endl;
     return(true);
 }
 
@@ -77,17 +87,17 @@ bool StateAnalyzer::Analyze(RawEvent &event)
 {
     
     using namespace dammIds::state;
-    
-    if (!EventProcessor::Process(event))
-	return false;
 
-
+    //cout << " Entering Logi Analyze " << endl;
     if (logiSummary == NULL)
 	logiSummary = event.GetSummary("logi");
 
     logiList= logiSummary->GetList();
     logiMap.clear();
+    int mult = logiSummary->GetMult();
+    if ( mult == 0 ) return(false);
 
+    //cout << "LogiMult " <<  logiSummary->GetMult() << endl;
     FillLogicMap();
 
     double actualLogiTime = -1.0;
@@ -98,9 +108,16 @@ bool StateAnalyzer::Analyze(RawEvent &event)
 		vector<ChanEvent*>::const_iterator logiListIt = logiList.begin();
 		actualLogiTime = (*logiListIt)->GetTime() * pixie::clockInSeconds;
 		cycleLogiTime = actualLogiTime - measureOnTime;
+	if (firstTime == -1) firstTime = actualLogiTime;
+	
     }
-
+    cout <<"dt " <<  actualLogiTime - firstTime<< endl;
     SetCycleState();
+    plot(DD_STATE_TIME,actualLogiTime - firstTime, isTapeMoveOn);
+    plot(DD_STATE_TIME,actualLogiTime - firstTime,2*isMeasureOn);
+    plot(DD_STATE_TIME,actualLogiTime - firstTime,3*isBkgOn);
+    plot(DD_STATE_TIME,actualLogiTime - firstTime,4*isLightPulserOn);
+    plot(DD_STATE_TIME,actualLogiTime - firstTime,5*isIrradOn);
 
     return(true);
 }
@@ -197,7 +214,7 @@ void StateAnalyzer::FillLogicMap()
 		if (logiMap.count(subtype)>0)
 			cout<<"Error: Detector "<<subtype<<" has "<< logiMap.count(subtype)+1<<" signals in one event"<<endl;
 		logiMap.insert(make_pair(subtype,LogicData(((*logiListIt)))));
-		
+		//cout<<"Detector "<<subtype<<" has "<< logiMap.count(subtype) <<" signals in one event"<<endl;
 		//set logic flags
 		if((*logiListIt)->GetEnergy() > logicTreshold)
 		{

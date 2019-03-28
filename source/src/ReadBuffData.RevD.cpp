@@ -126,6 +126,12 @@ Remodified (NTB) to use interpret saturated and pileup bits
 	numEvents = readbuff::STATS;
 	continue;
       }
+
+      /*if (slotNum == 6) { 
+	cout << "    CHAN:SLOT:CRATE " 
+	     << chanNum << ":" << slotNum << ":" << crateNum << endl;
+	}*/
+
       if (headerLength != 4 && headerLength != 8 &&
 	  headerLength != 12 && headerLength != 16) { // (NTB) not sure if this (8,12,16) is appropriate for this version of the pixie cards. 
 	cout << "  Unexpected header length: " << headerLength << endl;

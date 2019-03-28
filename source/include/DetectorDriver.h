@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "TraceAnalyzer.h"
+#include "StateAnalyzer.h"
 #include "param.h"
 
 // forward declarations
@@ -43,6 +44,7 @@ class DetectorDriver {
     
     TraceAnalyzer traceSub;     /**< object which analyzes traces of channels to extract
 				   energy and time information */
+    StateAnalyzer stateSub;
     set<string> knownDetectors; /**< list of valid detectors that can 
 				   be used as detector types */
  public:    

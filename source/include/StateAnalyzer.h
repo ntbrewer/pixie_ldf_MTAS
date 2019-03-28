@@ -35,6 +35,7 @@ class StateAnalyzer: public EventProcessor {
     static bool isIrradOn;
     static double previousCycleTime;
     static double measureOnTime;
+    static double firstTime;
     static unsigned cycleNumber;
 
     bool isTriggerOnSignal;
@@ -75,7 +76,7 @@ class StateAnalyzer: public EventProcessor {
     std::map<std::string, struct LogicData>  logiMap;
 
  public:
-    virtual bool Init(void);
+    virtual bool Init();
     virtual void DeclarePlots() const;
     virtual bool Analyze(RawEvent &event);
 

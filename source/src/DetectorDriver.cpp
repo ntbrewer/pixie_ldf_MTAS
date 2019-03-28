@@ -152,6 +152,7 @@ int DetectorDriver::Init(void)
 {
     // initialize the trace analysis routine
     traceSub.Init();
+    stateSub.Init();
     // initialize processors in the event processing vector
     for (vector<EventProcessor *>::iterator it = vecProcess.begin();
 	 it != vecProcess.end(); it++) {
@@ -196,7 +197,9 @@ int DetectorDriver::ProcessEvent(const string &mode){
 	PlotCal(chan);
         //cout << chan->GetEnergy() << " from DD" <<  endl;       
     } //end chan by chan event processing
+    //wrap in an if!
 
+    stateSub.Analyze(rawev);
     // have each processor in the event processing vector handle the event
     for (vector<EventProcessor *>::iterator iProc = vecProcess.begin();
 	 iProc != vecProcess.end(); iProc++) {
@@ -221,6 +224,7 @@ void DetectorDriver::DeclarePlots(void) const
 	(*it)->DeclarePlots();
     }
     traceSub.DeclarePlots();
+    stateSub.DeclarePlots();
 }
 
 // sanity check for all our expectations
