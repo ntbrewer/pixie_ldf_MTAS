@@ -198,6 +198,36 @@ class ChanEvent {
     double GetTemperature() const {return kTemperature;}
 /****END SVP ADDITIONS****/
 
+/****Additions for StateAnalyzer Flags****/
+
+    bool isTapeMoveOn;
+    bool isMeasureOn;
+    bool isBkgOn;
+    bool isLightPulserOn;
+    bool isIrradOn;
+    double previousCycleTime;
+    double measureOnTime;
+    unsigned cycleNumber;
+
+    void SetTapeOn(bool a) {isTapeMoveOn = a;}
+    void SetMeasureOn(bool a) {isMeasureOn = a;}
+    void SetBkgOn(bool a) {isBkgOn = a;}
+    void SetLaserOn(bool a) {isLightPulserOn = a;}
+    void SetBeamOn(bool a) {isIrradOn = a;}
+    void SetPreviousCycleTime(double a) {previousCycleTime = a;}
+    void SetMeasureOnTime(double a) {measureOnTime = a;}
+    void SetCycleNumber(unsigned a) {cycleNumber = a;}
+
+    bool GetTapeOn(void) { return isTapeMoveOn;}
+    bool GetMeasureOn(void) { return isMeasureOn;}
+    bool GetBkgOn(void) { return isBkgOn;}
+    bool GetLaserOn(void) { return isLightPulserOn;}
+    bool GetBeamOn(void) { return isIrradOn;}
+    double GetPreviousCycleTime(void) { return previousCycleTime;}
+    double GetMeasureOnTime(void) { return measureOnTime;}
+    unsigned GetCycleNumber(void) { return cycleNumber;}
+
+
     ChanEvent();
     void ZeroVar();
 };

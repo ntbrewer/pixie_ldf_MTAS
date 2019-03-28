@@ -189,23 +189,42 @@ int DetectorDriver::ProcessEvent(const string &mode){
     plot(dammIds::misc::D_NUMBER_OF_EVENTS, GENERIC_CHANNEL);
     
     const vector<ChanEvent *> &eventList = rawev.GetEventList();
-    for(size_t i=0; i < eventList.size(); i++) {
-	ChanEvent *chan = eventList[i];  
+    
 
-        PlotRaw(chan);
-	ThreshAndCal(chan); // check threshold and calibrate
-	PlotCal(chan);
-        //cout << chan->GetEnergy() << " from DD" <<  endl;       
-    } //end chan by chan event processing
-    //wrap in an if!
+    for(size_t i=0; i < eventList.size(); i++) {
+	    ChanEvent *chan = eventList[i];  
+
+      PlotRaw(chan);
+	    ThreshAndCal(chan); // check threshold and calibrate
+	    PlotCal(chan);
+      //cout << chan->GetEnergy() << " from DD" <<  endl; 
+    }
 
     stateSub.Analyze(rawev);
+    
+
+    for(size_t i=0; i < eventList.size(); i++) {
+	    ChanEvent *chan = eventList[i];  
+         
+      bool stateFlag = stateSub.GetTapeOn();
+      chan->SetTapeOn(stateFlag);
+      stateFlag = stateSub.GetMeasureOn();
+      chan->SetMeasureOn(stateFlag);
+      stateFlag = stateSub.GetBkgOn();
+      chan->SetBkgOn(stateFlag);
+      stateFlag = stateSub.GetLaserOn();
+      chan->SetLaserOn(stateFlag);
+      stateFlag = stateSub.GetBeamOn();
+      chan->SetBeamOn(stateFlag);
+    } //end chan by chan event processing
+    
+   
     // have each processor in the event processing vector handle the event
     for (vector<EventProcessor *>::iterator iProc = vecProcess.begin();
-	 iProc != vecProcess.end(); iProc++) {
-	if ( (*iProc)->HasEvent() ) {
+        iProc != vecProcess.end(); iProc++) {
+	    if ( (*iProc)->HasEvent() ) {
 	     (*iProc)->Process(rawev);
-	}
+	    }
     }
 
     return 0;   

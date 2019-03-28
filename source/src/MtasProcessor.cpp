@@ -99,21 +99,27 @@ void MtasProcessor::DeclarePlots(void) const
 	  {
 	    string titlePart;
 	    if(i == 0)
-	      titlePart = "Total MTAS ";
+	      titlePart = "Total ";
 	    if(i == 1)
-	      titlePart = "Total Central ";
+	      titlePart = "Central ";
 	    if (i == 2)
-	      titlePart = "Total Inner ";
+	      titlePart = "Inner ";
 	    if (i == 3)
-	      titlePart = "Total Middle ";
+	      titlePart = "Middle ";
 	    if (i ==4)
-	      titlePart = "Total Outer ";
+	      titlePart = "Outer ";
+#ifdef OFFLINE
 	    DeclareHistogram2D(MTAS_EVO_NOLOGIC+i,EnergyBins,SA,(titlePart+"Full Story, No logic").c_str());
-	    DeclareHistogram2D(MTAS_LIGHTPULSER_EVO+i, EnergyBins, SA, (titlePart+"LightPulser vs Cycle Time").c_str());
+DeclareHistogram2D(MTAS_LIGHTPULSER_EVO+i, EnergyBins, SA, (titlePart+"LightPulser vs Cycle Time").c_str());
+#endif
+   	    DeclareHistogram1D(MTAS_EVO_NOLOGIC+5+i,  EnergyBins, (titlePart+" No logic").c_str());
+      	    DeclareHistogram1D(MTAS_EVO_NOLOGIC+15+i, EnergyBins, (titlePart+" No logic, Beta-gated").c_str());
+	    
 	  }
+#ifdef OFFLINE
 	DeclareHistogram2D(MTAS_REFERENCE_EVO, EnergyBins, SA, "Reference Module vs Time");
 	DeclareHistogram2D(MTAS_EVO_NOLOGIC+10,EnergyBins,SA,"MTAS Total  Full Story, Beta-Gated");
-
+#endif
 	//Beta-gated sum spectras
 	DeclareHistogram1D(MTAS_POSITION_ENERGY+300+5, EnergyBins, "Sum I+M+O, Beta-gated");
 	DeclareHistogram1D(MTAS_POSITION_ENERGY+300+25, EnergyBins, "Sum I, Beta-gated");
@@ -261,6 +267,12 @@ bool MtasProcessor::Process(RawEvent &event)
 		double location = (*mtasMapIt).second.location;
 		double time = (*mtasMapIt).second.time * pixie::clockInSeconds;
 
+	//	if ( (*mtasMapIt).second.isTapeMoveOn > 0 )    cout << "mtasTape t" << (*mtasMapIt).second.isTapeMoveOn << endl;
+	//	if ( (*mtasMapIt).second.isMeasureOn > 0 )    cout << "mtasTape m" << (*mtasMapIt).second.isMeasureOn << endl;
+	//	if ( (*mtasMapIt).second.isBkgOn > 0 )    cout << "mtasTape b" << (*mtasMapIt).second.isBkgOn << endl;
+	//	if ( (*mtasMapIt).second.isLaserOn > 0 )    cout << "mtasTape l" << (*mtasMapIt).second.isLaserOn << endl;
+	//	if ( (*mtasMapIt).second.isBeamOn > 0 )    cout << "mtasTape i" << (*mtasMapIt).second.isBeamOn << endl;
+
 		if((*mtasMapIt).first[0] == 'C')
 		{
 		  totalMtasEnergy.at(1) += signalEnergy/12;
@@ -317,7 +329,7 @@ bool MtasProcessor::Process(RawEvent &event)
 			cout<<"Warning: detector "<<(*mtasMapIt).first<<" has 3 or more signals"<<endl;
 		
 	}
-
+   
 	SetIfOnlyRingBool(); //Sets booleans for ring gating. Options are 
 			     //isCenter, isInner, isMiddle, isOuter, also 
 			     //isCenterOnly, isInnerOnly, isMiddleOnly, isOuterOnly, isAll
@@ -365,10 +377,11 @@ bool MtasProcessor::Process(RawEvent &event)
 	    incplot(MTAS_POSITION_ENERGY+272, cycleLogiTime, cycleNumber, logicSignalsValue);
 	}
 
+#ifdef OFFLINE
 	// K. C. Goetz for March 2015 Experiment: reference crystal vs time in 1 minute intervals
 	// Histogram # 5100
 	plot(MTAS_REFERENCE_EVO, refmodEnergy, (actualTime - firstTime)/60); //not using refModule.at(0) NTB
-
+#endif
 
     if(nrOfCentralPMTs != 12 ) //redundant?|| nrOfCentralPMTs == 0)
         totalMtasEnergy.at(1) =-1;
@@ -409,10 +422,10 @@ bool MtasProcessor::Process(RawEvent &event)
 		//3101 - 3147 odd, no B-gated
 		for(unsigned int i=0; i<sumFrontBackEnergy.size(); i++)
 			plot(MTAS_POSITION_ENERGY+100+2*i+1, sumFrontBackEnergy.at(i));
-
+#ifdef OFFLINE
 		for (int i=0; i<5; i++)
 		  plot(MTAS_LIGHTPULSER_EVO+i, totalMtasEnergy.at(i), cycleTime);
-
+#endif
 	}  
   
 //Irradiation  
@@ -444,12 +457,17 @@ bool MtasProcessor::Process(RawEvent &event)
     {
         plot(MTAS_POSITION_ENERGY+273, actualTime - firstTime);
     }
-        
+*/        
+#ifdef OFFLINE
     for(int i=0; i<5; i++)
         plot(MTAS_EVO_NOLOGIC+i, totalMtasEnergy.at(i), (actualTime - firstTime)/60);
-
-
     if( isBetaSignal) plot(MTAS_EVO_NOLOGIC+10, totalMtasEnergy.at(0), (actualTime - firstTime)/60);
+#endif
+    for(int i=0; i<5; i++)
+	plot(MTAS_EVO_NOLOGIC+i, totalMtasEnergy.at(i), (actualTime - firstTime)/60); 
+/*
+    
+    
 
 //"Regular" measurement 
 
@@ -583,8 +601,8 @@ bool MtasProcessor::Process(RawEvent &event)
 	      }//
 
 	   }
-	}  
-*/
+	}*/  
+
 	EndProcess(); // update the processing time
     
 	return true;
@@ -597,6 +615,12 @@ MtasProcessor::MtasData::MtasData(string type)
     calEnergy      = -1.;
     time           = -1.;
     location       = -1.;
+
+		isTapeMoveOn = false;
+		isMeasureOn = true;
+		isBkgOn = false;
+		isLaserOn = false;
+		isBeamOn = false;
 }
 
 MtasProcessor::MtasData::MtasData(ChanEvent *chan)
@@ -606,6 +630,12 @@ MtasProcessor::MtasData::MtasData(ChanEvent *chan)
     calEnergy = chan->GetCalEnergy();
     time = chan->GetTime();
     location = chan->GetChanID().GetLocation();
+
+		isTapeMoveOn = chan->GetTapeOn();
+		isMeasureOn = chan->GetMeasureOn();
+		isBkgOn = chan->GetBkgOn();
+		isLaserOn = chan->GetLaserOn();
+		isBeamOn = chan->GetBeamOn();
 }
 
 void MtasProcessor::SetIfOnlyRingBool()

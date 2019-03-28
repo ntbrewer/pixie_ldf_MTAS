@@ -70,6 +70,11 @@ class MtasProcessor : public EventProcessor
             double time;
             double location;
 
+            bool isTapeMoveOn;
+            bool isMeasureOn;
+            bool isBkgOn;
+            bool isLaserOn;
+            bool isBeamOn;
             //std::vector<int> trace; not necessary for MTAS
         };
 

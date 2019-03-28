@@ -9,6 +9,9 @@ REVISIOND = 1
 #Uncomment this line to use the Pulse Fitting routine
 #PULSEFIT = 1
 
+#Uncomment to make the offline version of the scan (includes "full story 2d plots"
+#OFFLINE
+
 #------- instruct make to search through these
 #------- directories to find files
 vpath %.f scan/ 
@@ -52,6 +55,10 @@ GCCFLAGS += -fPIC $(CINCLUDEDIRS)
 CXXFLAGS += -Wall -fPIC $(CINCLUDEDIRS) -Dnewreadout 
 ifdef REVISIOND
 CXXFLAGS += -DREVD
+endif
+
+ifdef OFFLINE
+CXXFLAGS += -DOFFLINE
 endif
 
 # -Dnewreadout is needed to account for a change to pixie16 readout
