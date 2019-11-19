@@ -1,7 +1,7 @@
 ///@file PspmtProcessor.cpp
 ///@Processes information from a Position Sensitive PMT.  No Pixel work yet. 
-///@author A. Keeler, S. Go, S. V. Paulauskas 
-///@date July 8, 2018
+///@author A. Keeler, S. Go, S. V. Paulauskas, NT Brewer
+///@date Mar 12, 2019
 
 #include <algorithm>
 #include <iostream>
@@ -17,6 +17,7 @@
 #include "damm_plotids.h"
 #include "DetectorDriver.h"
 #include "MtasPspmtProcessor.h"
+#include "MtasProcessor.h"
 
 using namespace std;
 using namespace dammIds::mtaspspmt;
@@ -25,7 +26,11 @@ namespace dammIds {
     namespace mtaspspmt {
         //const int DD_MULTI = 4;
         const int DD_POS_DIAG = OFFSET+1;
-        const int DD_POS_IMPL = OFFSET+2;
+        const int D_POS_IMPL = OFFSET+2;
+        const int D_SUME_IMPL = OFFSET+3;
+        const int D_SUME_DIAG = OFFSET+4; 
+        const int D_SUME_IMPL10 = OFFSET+5;
+        const int D_SUME_DIAG10 = OFFSET+6;        
     }
 }
 
@@ -35,7 +40,11 @@ void MtasPspmtProcessor::DeclarePlots(void) const
 
     //cout << " all clear" << endl;
     DeclareHistogram2D(DD_POS_DIAG, SB, SB, "Diagnostic Detector Positions");
-    DeclareHistogram2D(DD_POS_IMPL, SB, SB, "Implant Detector Positions");
+    DeclareHistogram1D(D_POS_IMPL, SD, "Implant Detector Positions");
+    DeclareHistogram1D(D_SUME_IMPL, SD, "Sum Energy of Implant");
+    DeclareHistogram1D(D_SUME_DIAG, SD, "Sum Energy of Diagnostic");
+    DeclareHistogram1D(D_SUME_IMPL10, SD, "Sum Energy/10 of Implant");
+    DeclareHistogram1D(D_SUME_DIAG10, SD, "Sum Energy/10 of Diagnostic");
     //DeclareHistogram2D(DD_MULTI,S3,S3, "Multiplicity");
 }
 
@@ -127,7 +136,6 @@ bool MtasPspmtProcessor::Process(RawEvent &event) {
     double sumImpl = 0;
     double sumDiag = 0;
 
-
     for(map<string, struct PSData>::const_iterator pspmtIt = mtasPspmtMap.begin();
             pspmtIt != mtasPspmtMap.end(); pspmtIt ++)
     {
@@ -137,52 +145,53 @@ bool MtasPspmtProcessor::Process(RawEvent &event) {
         {
 
            double energy = (*pspmtIt).second.energy;
-           double tag = (*pspmtIt).second.tag;
+           std::string tag = (*pspmtIt).second.tag;
            dttype_ = implant;
 	   if (energy < implantThreshold_)
                continue;
             //parcel out position signals by tag. here tag is designated by loc in map.txt
-           if (tag == 0 && xa == 0) {
+           if (tag == "xa" && xa == 0) {
                xa = energy;
                sumImpl += energy;
            }
-           if (tag == 1 && xb == 0) {
+           if (tag == "xb" && xb == 0) {
                xb = energy;
                sumImpl += energy;
            }
-	   cout <<"here " << xa << " , " << xb  << endl;
+	   //cout <<"here " << xa << " , " << xb  << endl;
            if (xa > 0 && xb > 0){
            
               position_mtas.first = CalculatePosition(xa, xb, ya, yb, dttype_).first;
               position_mtas.second = CalculatePosition(xa, xb, ya, yb, dttype_).second;
-              plot(DD_POS_IMPL, position_mtas.first * implantScale_ + implantOffset_,
-                   position_mtas.second * implantScale_ + implantOffset_);
+              plot(D_POS_IMPL, position_mtas.first * implantScale_ + implantOffset_);
+              plot(D_SUME_IMPL, sumImpl);
+              plot(D_SUME_IMPL10, sumImpl/10.);
            }
 	}
         //cout << "sub " << dttype.substr(0,10) << endl;
         if( dttype.substr(0,10) == "diagnostic")
         {
            double energy = (*pspmtIt).second.energy;
-           double tag = (*pspmtIt).second.tag;
+           std::string tag = (*pspmtIt).second.tag;
            dttype_ = diagnostic;
            
 	   if (energy < diagnosticThreshold_) {
                continue;
 	   }
             //parcel out position signals by tag. here tag is designated by loc in map.txt
-           if (tag == 1 && xa == 0) {
+           if (tag == "xa" && xa == 0) {
                xa = energy;
                sumDiag += energy;
            }
-           if (tag == 0 && xb == 0) {
+           if (tag == "xb" && xb == 0) {
                xb = energy;
                sumDiag += energy;
            }
-           if (tag == 3 && ya == 0) {
+           if (tag == "ya" && ya == 0) {
                ya = energy;
                sumDiag += energy;
            }
-           if (tag == 2 && yb == 0) {
+           if (tag == "yb" && yb == 0) {
                yb = energy;
                sumDiag += energy;
            }
@@ -195,6 +204,8 @@ bool MtasPspmtProcessor::Process(RawEvent &event) {
               position_mtas.second = CalculatePosition(xa, xb, ya, yb, dttype_).second;
               plot(DD_POS_DIAG, position_mtas.first * diagnosticScale_ + diagnosticOffset_,
                    position_mtas.second * diagnosticScale_ + diagnosticOffset_);
+              plot(D_SUME_DIAG, sumDiag);
+              plot(D_SUME_DIAG10, sumDiag/10.);
            }
 	}
     }
@@ -254,7 +265,8 @@ MtasPspmtProcessor::PSData::PSData(string type)
     energy         = -1.;
     calEnergy      = -1.;
     time           = -1.;
-    tag            = -1.;
+    loc            = -1.;
+    tag            = "na";
 }
 
 MtasPspmtProcessor::PSData::PSData(ChanEvent *chan)
@@ -263,5 +275,7 @@ MtasPspmtProcessor::PSData::PSData(ChanEvent *chan)
     energy	= chan->GetEnergy();
     calEnergy = chan->GetCalEnergy();
     time = chan->GetTime();
-    tag  = chan->GetChanID().GetLocation();
+    loc  = chan->GetChanID().GetLocation();
+    tag = subtype.substr(subtype.find("_")+1,2);
+    
 }

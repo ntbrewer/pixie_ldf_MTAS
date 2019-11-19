@@ -103,19 +103,11 @@ int ReadBuffData(word_t *buf, unsigned long *bufLen,
       word_t slotNum      = (buf[0] & 0x000000F0) >> 4;
       word_t crateNum     = (buf[0] & 0x00000F00) >> 8;
       word_t headerLength = (buf[0] & 0x0001F000) >> 12;
-
-      word_t eventLength  = (buf[0] & 0x1FFE0000) >> 17;
-      
-      currentEvt->virtualChannel = ((buf[0] & 0x20000000) != 0);
-      currentEvt->saturatedBit   = ((buf[0] & 0x40000000) != 0);
-      currentEvt->pileupBit      = ((buf[0] & 0x80000000) != 0);
-
-/*      // MODIFIED to ignore saturated bit (DTM)
+      // MODIFIED to ignore saturated bit (DTM)
       //      word_t eventLength  = (buf[0] & 0x7FFE0000) >> 17;
       word_t eventLength  = (buf[0] & 0x3FFE0000) >> 17;
       word_t finishCode   = (buf[0] & 0x80000000) >> 31;
-Remodified (NTB) to use interpret saturated and pileup bits
-*/
+
       // Rev. D header lengths not clearly defined in pixie16app_defs
       //! magic numbers here for now
       // make some sanity checks
@@ -126,8 +118,7 @@ Remodified (NTB) to use interpret saturated and pileup bits
 	numEvents = readbuff::STATS;
 	continue;
       }
-      if (headerLength != 4 && headerLength != 8 &&
-	  headerLength != 12 && headerLength != 16) { // (NTB) not sure if this (8,12,16) is appropriate for this version of the pixie cards. 
+      if (headerLength != 4) {
 	cout << "  Unexpected header length: " << headerLength << endl;
 	cout << "    Buffer " << modNum << " of length " << *bufLen << endl;
 	cout << "    CHAN:SLOT:CRATE " 
@@ -136,16 +127,15 @@ Remodified (NTB) to use interpret saturated and pileup bits
 	// buf += EventLength;
 	// continue;
 
-	// skip the rest of this buffer (nope, NTB)
-	return numEvents;
-    //(NTB) return readbuff::ERROR;
+	// skip the rest of this buffer
+	//return numEvents;
+    return readbuff::ERROR;
       }
 
       word_t lowTime     = buf[1];
       word_t highTime    = buf[2] & 0x0000FFFF;
       word_t energy      = buf[3] & 0x0000FFFF;
       word_t traceLength = (buf[3] & 0xFFFF0000) >> 16;
-      word_t cfdTime     = (buf[2] & 0xFFFF0000) >> 16; //(NTB)
 
       // one last sanity check
       if ( traceLength / 2 + headerLength != eventLength ) {
@@ -163,7 +153,6 @@ Remodified (NTB) to use interpret saturated and pileup bits
       currentEvt->modNum = modNum;
       currentEvt->energy = energy;
       currentEvt->trigTime = lowTime;
-      currentEvt->cfdTime  = cfdTime;
       currentEvt->eventTimeHi = highTime;
       currentEvt->eventTimeLo = lowTime;
       currentEvt->time = highTime * HIGH_MULT + lowTime;
@@ -173,11 +162,6 @@ Remodified (NTB) to use interpret saturated and pileup bits
       if ( traceLength > 0 ) {
 	// sbuf points to the beginning of trace data
 	halfword_t *sbuf = (halfword_t *)buf; 
-	currentEvt->trace.reserve(traceLength); //NTB
-	
-	/*if(currentEvt->saturatedBit)
-	  currentEvt->trace.SetTraceInfo("saturation", 1); //NTB*/
-
 	// Read the trace data (2-bytes per sample, i.e. 2 samples per word)
 	for(unsigned int k = 0; k < traceLength; k ++) {
 	  currentEvt->trace.push_back(sbuf[k]);

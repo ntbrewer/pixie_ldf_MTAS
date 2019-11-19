@@ -8,7 +8,7 @@
 
 using namespace std;
 
-const double ChanEvent::pixieEnergyContraction = 1.0;
+const double ChanEvent::pixieEnergyContraction = 4.0;
 
 /**
  * Identifier constructor

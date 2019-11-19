@@ -257,15 +257,18 @@ int DetectorDriver::ThreshAndCal(ChanEvent *chan)
 	vector<double> values;
 
         traceSub.Analyze(chan->GetTraceRef(), type, subtype);
-	energy = traceSub.GetEnergy();
+     		//energy = traceSub.GetEnergy();
         //chan->SetEnergy(energy);
+      energy = chan->GetEnergy() + randoms.Get();
+     // energy /= ChanEvent::pixieEnergyContraction;
+
     } else {
       // otherwise, use the Pixie on-board calculated energy
       // add a random number to convert an integer value to a 
       //   uniformly distributed floating point
 
       energy = chan->GetEnergy() + randoms.Get();
-      energy /= ChanEvent::pixieEnergyContraction;
+      //energy /= ChanEvent::pixieEnergyContraction;
     }
     /*
       Set the calibrated energy for this channel
@@ -305,12 +308,12 @@ int DetectorDriver::PlotCal(const ChanEvent *chan) const
     // int dammid = chan->GetChanID().GetDammID();
     float calEnergy = chan->GetCalEnergy();
     //Identifier chanID = chan->GetChanID(); 
-    if (id==63) {
+    /*if (id==63) {
        plot(dammIds::misc::offsets::D_CAL_ENERGY + id, (calEnergy*(ChanEvent::pixieEnergyContraction)));
     //    cout << chanID.GetType()<<endl;
-    } else {
-        plot(dammIds::misc::offsets::D_CAL_ENERGY + id, calEnergy);
-    }
+    } else {*/
+    plot(dammIds::misc::offsets::D_CAL_ENERGY + id, calEnergy);
+    //}
     // plot(dammid, calEnergy);
 
     return 0;

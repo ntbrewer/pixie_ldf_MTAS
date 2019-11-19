@@ -22,16 +22,19 @@ using std::string;
 static double measureOnTime =-1.;
 static double firstTime =0.;
 MtasProcessor::MtasProcessor() :
-  EventProcessor(), mtasSummary(NULL), siliSummary(NULL), logiSummary(NULL), refmodSummary(NULL) //Goetz added refmodSummary subtype
+  EventProcessor(), mtasSummary(NULL), siliSummary(NULL), geSummary(NULL), sipmSummary(NULL), logiSummary(NULL), refmodSummary(NULL) //Goetz added refmodSummary subtype
 {
   firstTime = -1.;
     name = "mtas";
     associatedTypes.insert("mtas");
     associatedTypes.insert("sili");//silicons
+    associatedTypes.insert("ge");
+    associatedTypes.insert("mtaspspmt");
     associatedTypes.insert("logi");//logic sygnals
     //associatedTypes.insert("ionc");//ionization chamber
     // Goetz: added reference module type generic for March 2015 experiment 
     associatedTypes.insert("refmod"); 
+
 }
 
 void MtasProcessor::DeclarePlots(void) const
@@ -109,9 +112,9 @@ void MtasProcessor::DeclarePlots(void) const
 	    if (i ==4)
 	      titlePart = "Total Outer ";
 	    DeclareHistogram2D(MTAS_EVO_NOLOGIC+i,EnergyBins,SA,(titlePart+"Full Story, No logic").c_str());
-	    DeclareHistogram2D(MTAS_LIGHTPULSER_EVO+i, EnergyBins, SA, (titlePart+"LightPulser vs Cycle Time").c_str());
+	   // DeclareHistogram2D(MTAS_LIGHTPULSER_EVO+i, EnergyBins, SA, (titlePart+"LightPulser vs Cycle Time").c_str());
 	  }
-	DeclareHistogram2D(MTAS_REFERENCE_EVO, EnergyBins, SA, "Reference Module vs Time");
+//	DeclareHistogram2D(MTAS_REFERENCE_EVO, EnergyBins, SA, "Reference Module vs Time");
 	DeclareHistogram2D(MTAS_EVO_NOLOGIC+10,EnergyBins,SA,"MTAS Total  Full Story, Beta-Gated");
 
 	//Beta-gated sum spectras
@@ -156,6 +159,10 @@ void MtasProcessor::DeclarePlots(void) const
 	DeclareHistogram1D(MTAS_POSITION_ENERGY+402, EnergyBins, "C B-gated N-IMO-gated");
 	DeclareHistogram1D(MTAS_POSITION_ENERGY+403, EnergyBins, "Tot B-gated N-MO-gated");
 	DeclareHistogram1D(MTAS_POSITION_ENERGY+404, EnergyBins, "C B-gated N-MO-gated");
+
+   //Ge stuff
+	DeclareHistogram2D(MTAS_POSITION_ENERGY+416, EnergyBins, SA, "Ge energy vs cycle time");
+	DeclareHistogram1D(MTAS_POSITION_ENERGY+417, EnergyBins, "Implant gated Ge");
 	
 	//Silicons
 	DeclareHistogram1D(MTAS_POSITION_ENERGY+500, S4, "Silicon Multiplicity");
@@ -195,14 +202,20 @@ bool MtasProcessor::Process(RawEvent &event)
 		mtasSummary = event.GetSummary("mtas");//czy musze to robic tak?
 	if (siliSummary == NULL)	
 		siliSummary = event.GetSummary("sili");
+  if (geSummary == NULL)
+		geSummary = event.GetSummary("ge");
 	if (logiSummary == NULL)
 		logiSummary = event.GetSummary("logi");
+	if (sipmSummary == NULL)	
+		sipmSummary = event.GetSummary("mtaspspmt");
 	//if (refmodSummary == NULL)
 	//  refmodSummary = event.GetSummary("refmod"); //added by Goetz
 	  
 
 	mtasList= mtasSummary->GetList();
 	siliList= siliSummary->GetList();
+	geList= geSummary->GetList();
+	sipmList= sipmSummary->GetList();
 	logiList= logiSummary->GetList();
 	refmodList = event.GetSummary("refmod")->GetList(); //added by Goetz
 	
@@ -210,17 +223,21 @@ bool MtasProcessor::Process(RawEvent &event)
 	mtasMap.clear();
 	siliMap.clear();
 	logiMap.clear();
+  geMap.clear();
+ 	sipmMap.clear();
 	refmodMap.clear(); 
 
 	FillMtasMap();
 	FillSiliMap();
+  FillGeMap();
+  FillSipmMap();
  	FillRefModMapAndEnergy();
 	FillLogicMap(); //Maps are filled with data
 
 	//Set up time for mtas and cycle logic
 	double cycleTime = -1.0;
 	double actualTime = -1.0;
-        double earliestIMOTime = std::numeric_limits<double>::max();
+  double earliestIMOTime = std::numeric_limits<double>::max();
 	double actualLogiTime = -1.0;
 	double cycleLogiTime = -1.0;
 
@@ -349,7 +366,7 @@ bool MtasProcessor::Process(RawEvent &event)
 		for(map<string, struct MtasData>::const_iterator siliMapIt = siliMap.begin(); siliMapIt != siliMap.end(); siliMapIt++)
 		{
 			siliconNumber = 0;
-       		if((*siliMapIt).first[2] == 'T')//top - channel from 9 to 15
+       		if((*siliMapIt).first[2] == 'B')//bottom - channel from 9 to 15
 				siliconNumber = 8;
 			siliconNumber += (*siliMapIt).first[1]-48;//48 - position of '0' character in Ascii Table
             plot(MTAS_POSITION_ENERGY+510, siliconNumber);
@@ -366,8 +383,8 @@ bool MtasProcessor::Process(RawEvent &event)
 
 	// K. C. Goetz for March 2015 Experiment: reference crystal vs time in 1 minute intervals
 	// Histogram # 5100
-	plot(MTAS_REFERENCE_EVO, refmodEnergy, (actualTime - firstTime)/60); //not using refModule.at(0) NTB
-
+	//plot(MTAS_REFERENCE_EVO, refmodEnergy, (actualTime - firstTime)/60); //not using refModule.at(0) NTB
+  
 
     if(nrOfCentralPMTs != 12 ) //redundant?|| nrOfCentralPMTs == 0)
         totalMtasEnergy.at(1) =-1;
@@ -409,11 +426,17 @@ bool MtasProcessor::Process(RawEvent &event)
 		for(unsigned int i=0; i<sumFrontBackEnergy.size(); i++)
 			plot(MTAS_POSITION_ENERGY+100+2*i+1, sumFrontBackEnergy.at(i));
 
-		for (int i=0; i<5; i++)
+		/*for (int i=0; i<5; i++)
 		  plot(MTAS_LIGHTPULSER_EVO+i, totalMtasEnergy.at(i), cycleTime);
-
+    */
 	}  
-  
+  for(map<string, struct MtasData>::const_iterator geMapIt = geMap.begin(); geMapIt != geMap.end(); geMapIt++)
+		{
+		    plot(MTAS_POSITION_ENERGY+416, (*geMapIt).second.calEnergy, cycleTime);
+		    if (implantMult == 2)
+     		    plot(MTAS_POSITION_ENERGY+417, (*geMapIt).second.calEnergy);
+		}
+		
 //Irradiation  
 	if(isIrradOn && !isBkgOn)
 	{
@@ -767,6 +790,39 @@ void MtasProcessor::FillRefModMapAndEnergy()
 	  }
 }
 
+void MtasProcessor::FillSipmMap()
+{
+	// added by Goetz for March 2015 experiment allows for any detector type generic to be imported into mtas processor (subtype is independent)
+  implantEnergy = 0.;
+  implantMult = 0.;
+	for(vector<ChanEvent*>::const_iterator sipmListIt = sipmList.begin(); 
+            sipmListIt != sipmList.end(); sipmListIt++)
+	  {
+	    string subtype = (*sipmListIt)->GetChanID().GetSubtype();
+	    if ((*sipmListIt)->GetEnergy() == 0 || (*sipmListIt)->GetEnergy() > 30000)
+                continue;
+	    sipmMap.insert(make_pair(subtype,MtasData((*sipmListIt))));
+	    if (subtype == "implant_xa" || subtype == "implant_xb")
+    	    implantEnergy += (*sipmListIt)->GetEnergy();
+    	    implantMult +=1;
+	  }
+}
+
+void MtasProcessor::FillGeMap()
+{
+	// added for Nov 2019 experiment at ANL with implant detector
+  //geEnergy = 0.;
+	for(vector<ChanEvent*>::const_iterator geListIt = geList.begin(); 
+            geListIt != geList.end(); geListIt++)
+	  {
+	    string subtype = (*geListIt)->GetChanID().GetSubtype();
+	    if ((*geListIt)->GetEnergy() == 0 || (*geListIt)->GetEnergy() > 30000)
+                continue;
+	    geMap.insert(make_pair(subtype,MtasData((*geListIt))));
+	   // geEnergy += (*geListIt)->GetEnergy();
+	  }
+}
+
 void MtasProcessor::FillLogicMap()
 {
         isTriggerOnSignal = false;
@@ -862,6 +918,5 @@ bool MtasProcessor::isMeasureOn = true;
 bool MtasProcessor::isBkgOn = false;
 bool MtasProcessor::isLightPulserOn = false;
 bool MtasProcessor::isIrradOn = false;
-//bool MtasProcessor::isIrradOn = false;
 double MtasProcessor::measureOnTime = -1; 
 unsigned MtasProcessor::cycleNumber = 0;
